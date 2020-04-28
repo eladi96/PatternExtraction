@@ -4,8 +4,22 @@ files downloaded from tatoeba.org, aligning the sentences from the three differe
 """
 
 import csv
-from xml.etree import ElementTree
 from xml.dom import minidom
+from xml.etree import ElementTree
+
+# cd Documents\Tesi\PatternExtraction\tatoeba
+# python tatoeba.py
+
+
+def check_well_formed_xml(path):
+
+    with open(path, mode='r', encoding='utf8') as file:
+        for count, row in enumerate(file):
+            if row[0] != "<" and row[0] != " ":
+                print(row)
+                print("Error in row " + str(count))
+                input()
+    print("Check completed.")
 
 
 def prettify(elem):
@@ -16,7 +30,51 @@ def prettify(elem):
     return reparsed.toprettyxml(indent="  ")
 
 
-def generate_xml():
+def generate_cloze_xml(out_path_it, out_path_ja):
+
+    en_sent, it_sent, ja_sent = read_sentences()
+
+    with open("en_ja_links.tsv", mode='r', encoding='utf8') as tsv:
+        reader = csv.reader(tsv, delimiter='\t')
+        en_ja = dict([(row[0], row[1]) for row in reader])
+
+    with open("en_it_links.tsv", mode='r', encoding='utf8') as tsv:
+        reader = csv.reader(tsv, delimiter='\t')
+        en_it = dict([(row[0], row[1]) for row in reader])
+
+    root_it = ElementTree.Element('sentences')
+    root_ja = ElementTree.Element('sentences')
+
+    length = str(len(en_sent))
+    sentId = 1
+    for count, enId, in enumerate(en_sent.keys()):
+        print("\rElement " + str(count) + " of " + length, end='')
+        itId = en_it.get(enId, None)
+        jaId = en_ja.get(enId, None)
+
+        if itId is not None and jaId is None:
+            sentence = ElementTree.SubElement(root_it, 'sentence', {'id': str(sentId)})
+            sentId = sentId + 1
+            item = ElementTree.SubElement(sentence, 'item', {'lang': 'en', 'tatoebaId': str(enId)})
+            item.text = en_sent[enId][1]
+            item = ElementTree.SubElement(sentence, 'item', {'lang': 'it', 'tatoebaId': str(itId)})
+            item.text = it_sent[itId][1]
+
+        if jaId is not None and itId is None:
+            sentence = ElementTree.SubElement(root_ja, 'sentence', {'id': str(sentId)})
+            sentId = sentId + 1
+            item = ElementTree.SubElement(sentence, 'item', {'lang': 'en', 'tatoebaId': str(enId)})
+            item.text = en_sent[enId][1]
+            item = ElementTree.SubElement(sentence, 'item', {'lang': 'ja', 'tatoebaId': str(jaId)})
+            item.text = ja_sent[jaId][1]
+
+    output = open(out_path_it, 'w', encoding='utf8')
+    output.write(prettify(root_it))
+    output = open(out_path_ja, 'w', encoding='utf8')
+    output.write(prettify(root_ja))
+
+
+def generate_xml(out_path = 'tatoeba.xml'):
 
     en_sent, it_sent, ja_sent = read_sentences()
 
@@ -44,7 +102,7 @@ def generate_xml():
             item = ElementTree.SubElement(sentence, 'item', {'lang': 'it', 'tatoebaId': str(itId)})
             item.text = it_sent[itId][1]
 
-    output = open('tatoeba.xml', 'w', encoding='utf8')
+    output = open(out_path, 'w', encoding='utf8')
     output.write(prettify(root))
 
 
@@ -67,23 +125,6 @@ def coupled_links():
                     en_ja.write(row[0] + "\t" + row[1] + "\n")
                 if row[1] in it_sent:
                     en_it.write(row[0] + "\t" + row[1] + "\n")
-
-
-def en_it_ja_links():
-    """
-    Script used to obtain only the links in the interested languages from the links file
-    """
-
-    sentences, it_sent, ja_sent = read_sentences()
-    sentences.update(it_sent)
-    sentences.update(ja_sent)
-    with open("links.tsv", mode='r', encoding='utf8') as tsv_file:
-        reader = csv.reader(tsv_file, delimiter='\t')
-        with open("eng_ita_jpn_links.tsv", mode='w') as destination:
-            for count, row in enumerate(reader):
-                print("\rReading line " + str(count) + " of 17.318.500", end='')
-                if row[0] in sentences and row[1] in sentences:
-                    destination.write(row[0] + "\t" + row[1] + "\n")
 
 
 def read_sentences():
@@ -112,4 +153,4 @@ def read_sentences():
 
 if __name__ == '__main__':
 
-    read_sentences()
+    generate_cloze_xml('tatoeba_en_it.xml', 'tatoeba_en_ja.xml')
