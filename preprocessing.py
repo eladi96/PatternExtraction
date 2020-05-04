@@ -1,11 +1,7 @@
-from polyglot.text import Text
-from nltk.tokenize import word_tokenize
 import xml.etree.ElementTree as ET
 import csv
 import os
-import time
 from xml.dom import minidom
-import sys
 
 # cd Documents\Tesi\Pattern_extraction\tatoeba
 # python preprocessing.py
@@ -69,20 +65,20 @@ def tatoeba_to_semagram_eng():
     print("Completed!")
 
 
-def eng_pos_accordance(xmlfile):
-
-    babelnet_pos = {'n': 'NOUN', 'v': 'VERB'}
-    tree = ET.parse(xmlfile)
-    root = tree.getroot()
-    for semagram in root:
-        pos = babelnet_pos[semagram.get('babelsynset')[-1]]
-        word = semagram.get('name')
-        for item in semagram:
-            tagged = dict(Text(item.text, hint_language_code='en').pos_tags)
-            if pos != tagged[word]:
-                semagram.remove(item)
-
-    tree.write(os.path.join(xmlfile.strip(".xml"), "_cleaned.xml"), encoding='utf8')
+# def eng_pos_accordance(xmlfile):
+#
+#     babelnet_pos = {'n': 'NOUN', 'v': 'VERB'}
+#     tree = ET.parse(xmlfile)
+#     root = tree.getroot()
+#     for semagram in root:
+#         pos = babelnet_pos[semagram.get('babelsynset')[-1]]
+#         word = semagram.get('name')
+#         for item in semagram:
+#             tagged = dict(Text(item.text, hint_language_code='en').pos_tags)
+#             if pos != tagged[word]:
+#                 semagram.remove(item)
+#
+#     tree.write(os.path.join(xmlfile.strip(".xml"), "_cleaned.xml"), encoding='utf8')
 
 
 # if __name__ == '__main__':

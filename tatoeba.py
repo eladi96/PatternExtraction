@@ -34,11 +34,11 @@ def generate_cloze_xml(out_path_it, out_path_ja):
 
     en_sent, it_sent, ja_sent = read_sentences()
 
-    with open("en_ja_links.tsv", mode='r', encoding='utf8') as tsv:
+    with open("tatoeba/en_ja_links.tsv", mode='r', encoding='utf8') as tsv:
         reader = csv.reader(tsv, delimiter='\t')
         en_ja = dict([(row[0], row[1]) for row in reader])
 
-    with open("en_it_links.tsv", mode='r', encoding='utf8') as tsv:
+    with open("tatoeba/en_it_links.tsv", mode='r', encoding='utf8') as tsv:
         reader = csv.reader(tsv, delimiter='\t')
         en_it = dict([(row[0], row[1]) for row in reader])
 
@@ -78,11 +78,11 @@ def generate_xml(out_path = 'tatoeba.xml'):
 
     en_sent, it_sent, ja_sent = read_sentences()
 
-    with open("en_ja_links.tsv", mode='r', encoding='utf8') as tsv:
+    with open("tatoeba/en_ja_links.tsv", mode='r', encoding='utf8') as tsv:
         reader = csv.reader(tsv, delimiter='\t')
         en_ja = dict([(row[0], row[1]) for row in reader])
 
-    with open("en_it_links.tsv", mode='r', encoding='utf8') as tsv:
+    with open("tatoeba/en_it_links.tsv", mode='r', encoding='utf8') as tsv:
         reader = csv.reader(tsv, delimiter='\t')
         en_it = dict([(row[0], row[1]) for row in reader])
 
@@ -113,8 +113,8 @@ def coupled_links():
 
     en_sent, it_sent, ja_sent = read_sentences()
 
-    en_ja = open("en_ja_links.tsv", mode='w', encoding='utf8')
-    en_it = open("en_it_links.tsv", mode='w', encoding='utf8')
+    en_ja = open("tatoeba/en_ja_links.tsv", mode='w', encoding='utf8')
+    en_it = open("tatoeba/en_it_links.tsv", mode='w', encoding='utf8')
 
     with open("links.tsv", mode='r', encoding='utf8') as tsv_file:
         reader = csv.reader(tsv_file, delimiter='\t')
@@ -133,7 +133,7 @@ def read_sentences():
     @:return eng_sentences, ita_sentences, jap_sentences
     """
     # Reading sentences from files and adding them to the sentences dictionary
-    with open("en/en_sentences.tsv", mode='r', encoding='utf8') as tsv_file:
+    with open("tatoeba/en/en_sentences.tsv", mode='r', encoding='utf8') as tsv_file:
         reader = csv.reader(tsv_file, delimiter='\t')
         eng_sentences = dict([(row[0], tuple([row[1], row[2]])) for row in reader])
         print("Read English sentences.")
@@ -143,7 +143,7 @@ def read_sentences():
         ita_sentences = dict([(row[0], tuple([row[1], row[2]])) for row in reader])
         print("Read Italian sentences.")
 
-    with open("ja/ja_sentences.tsv", mode='r', encoding='utf8') as tsv_file:
+    with open("tatoeba/ja/ja_sentences.tsv", mode='r', encoding='utf8') as tsv_file:
         reader = csv.reader(tsv_file, delimiter='\t')
         jap_sentences = dict([(row[0], tuple([row[1], row[2]])) for row in reader])
         print("Read Japanese sentences.")
@@ -153,4 +153,4 @@ def read_sentences():
 
 if __name__ == '__main__':
 
-    generate_cloze_xml('tatoeba_en_it.xml', 'tatoeba_en_ja.xml')
+    generate_cloze_xml('tatoeba/tatoeba_en_it.xml', 'tatoeba_en_ja.xml')
