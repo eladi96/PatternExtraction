@@ -148,10 +148,21 @@ if __name__ == '__main__':
     ittk = ItalianTokenizer()
     entk = EnglishTokenizer()
 
+    print("Kytea:", end=" ")
     print(jptk.pos_tags_kytea("彼は時々変です"))
-    print("________________________________________________________")
+    print("MeCab:", end=" ")
     print(jptk.pos_tags_mecab("彼は時々変です"))
-    print("________________________________________________________")
+    print("Polyglot en:", end=" ")
     print(entk.pos_tags("Sometimes he can be a strange guy"))
-    print("________________________________________________________")
+    print("Polyglot it:", end=" ")
     print(ittk.pos_tags("A volte può essere un tizio strano"))
+
+    """
+    Result:
+    Kytea: [('彼', 'PRON'), ('は', 'PART'), ('時々', 'NOUN'), ('変', 'NOUN'), ('で', 'AUX'), ('す', 'TAIL')]
+    MeCab: [('彼', 'NOUN'), ('は', 'PART'), ('時々', 'ADV'), ('変', 'NOUN'), ('です', 'AUX')]
+    Polyglot en: [('Sometimes', 'ADV'), ('he', 'PRON'), ('can', 'AUX'), ('be', 'VERB'), ('a', 'DET'),
+                  ('strange', 'ADJ'), ('guy', 'NOUN')]
+    Polyglot it: [('A', 'ADP'), ('volte', 'NOUN'), ('può', 'PROPN'), ('essere', 'VERB'), ('un', 'DET'),
+                  ('tizio', 'NOUN'), ('strano', 'ADJ')]
+    """
