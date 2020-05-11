@@ -2,155 +2,190 @@
 The purpose of this module is to create a linked resource from the sentences contained in the .tsv
 files downloaded from tatoeba.org, aligning the sentences from the three different languages.
 """
-
 import csv
-from xml.dom import minidom
-from xml.etree import ElementTree
+import os
+import wget
+import tarfile
 
-# cd Documents\Tesi\PatternExtraction\tatoeba
-# python tatoeba.py
-
-
-def check_well_formed_xml(path):
-
-    with open(path, mode='r', encoding='utf8') as file:
-        for count, row in enumerate(file):
-            if row[0] != "<" and row[0] != " ":
-                print(row)
-                print("Error in row " + str(count))
-                input()
-    print("Check completed.")
+TATOEBA_PATH = 'tatoeba'
+TATOEBA_LINKS_URL = 'https://downloads.tatoeba.org/exports/links.tar.bz2'
+COUPLED_LINKS = 'links.csv'
+TAGS = 'tags.csv'
+ENG_SENT = 'eng_sentences.tsv'
+ENG_TAGS = 'eng_tags.tsv'
+ITA_SENT = 'ita_sentences.tsv'
+JPN_SENT = 'jpn_sentences.tsv'
 
 
-def prettify(elem):
-    """Return a pretty-printed XML string for the Element.
+# def check_well_formed_xml(path):
+#
+#     with open(path, mode='r', encoding='utf8') as file:
+#         for count, row in enumerate(file):
+#             if row[0] != "<" and row[0] != " ":
+#                 print(row)
+#                 print("Error in row " + str(count))
+#                 input()
+#     print("Check completed.")
+#
+#
+# def prettify(elem):
+#     """Return a pretty-printed XML string for the Element.
+#     """
+#     rough_string = ElementTree.tostring(elem, 'utf-8')
+#     reparsed = minidom.parseString(rough_string)
+#     return reparsed.toprettyxml(indent="  ")
+#
+#
+# def generate_cloze_xml(out_path_it, out_path_ja):
+#
+#     en_sent, it_sent, ja_sent = read_sentences()
+#
+#     with open("tatoeba/en_ja_links.tsv", mode='r', encoding='utf8') as tsv:
+#         reader = csv.reader(tsv, delimiter='\t')
+#         en_ja = dict([(row[0], row[1]) for row in reader])
+#
+#     with open("tatoeba/en_it_links.tsv", mode='r', encoding='utf8') as tsv:
+#         reader = csv.reader(tsv, delimiter='\t')
+#         en_it = dict([(row[0], row[1]) for row in reader])
+#
+#     root_it = ElementTree.Element('sentences')
+#     root_ja = ElementTree.Element('sentences')
+#
+#     length = str(len(en_sent))
+#     sentId = 1
+#     for count, enId, in enumerate(en_sent.keys()):
+#         print("\rElement " + str(count) + " of " + length, end='')
+#         itId = en_it.get(enId, None)
+#         jaId = en_ja.get(enId, None)
+#
+#         if itId is not None and jaId is None:
+#             sentence = ElementTree.SubElement(root_it, 'sentence', {'id': str(sentId)})
+#             sentId = sentId + 1
+#             item = ElementTree.SubElement(sentence, 'item', {'lang': 'eng', 'tatoebaId': str(enId)})
+#             item.text = en_sent[enId][1]
+#             item = ElementTree.SubElement(sentence, 'item', {'lang': 'ita', 'tatoebaId': str(itId)})
+#             item.text = it_sent[itId][1]
+#
+#         if jaId is not None and itId is None:
+#             sentence = ElementTree.SubElement(root_ja, 'sentence', {'id': str(sentId)})
+#             sentId = sentId + 1
+#             item = ElementTree.SubElement(sentence, 'item', {'lang': 'eng', 'tatoebaId': str(enId)})
+#             item.text = en_sent[enId][1]
+#             item = ElementTree.SubElement(sentence, 'item', {'lang': 'jpn', 'tatoebaId': str(jaId)})
+#             item.text = ja_sent[jaId][1]
+#
+#     output = open(out_path_it, 'w', encoding='utf8')
+#     output.write(prettify(root_it))
+#     output = open(out_path_ja, 'w', encoding='utf8')
+#     output.write(prettify(root_ja))
+#
+#
+# def generate_xml(out_path = 'tatoeba.xml'):
+#
+#     en_sent, it_sent, ja_sent = read_sentences()
+#
+#     with open("tatoeba/en_ja_links.tsv", mode='r', encoding='utf8') as tsv:
+#         reader = csv.reader(tsv, delimiter='\t')
+#         en_ja = dict([(row[0], row[1]) for row in reader])
+#
+#     with open("tatoeba/en_it_links.tsv", mode='r', encoding='utf8') as tsv:
+#         reader = csv.reader(tsv, delimiter='\t')
+#         en_it = dict([(row[0], row[1]) for row in reader])
+#
+#     root = ElementTree.Element('sentences')
+#     length = str(len(en_ja.items()))
+#     sentId = 1
+#     for count, (enId, jaId) in enumerate(en_ja.items()):
+#         print("\rElement " + str(count) + " of " + length, end='')
+#         itId = en_it.get(enId, None)
+#         if itId is not None:
+#             sentence = ElementTree.SubElement(root, 'sentence', {'id': str(sentId)})
+#             sentId = sentId + 1
+#             item = ElementTree.SubElement(sentence, 'item', {'lang': 'eng', 'tatoebaId': str(enId)})
+#             item.text = en_sent[enId][1]
+#             item = ElementTree.SubElement(sentence, 'item', {'lang': 'jpn', 'tatoebaId': str(jaId)})
+#             item.text = ja_sent[jaId][1]
+#             item = ElementTree.SubElement(sentence, 'item', {'lang': 'ita', 'tatoebaId': str(itId)})
+#             item.text = it_sent[itId][1]
+#
+#     output = open(out_path, 'w', encoding='utf8')
+#     output.write(prettify(root))
+def sentences_tags(sent_file):
     """
-    rough_string = ElementTree.tostring(elem, 'utf-8')
-    reparsed = minidom.parseString(rough_string)
-    return reparsed.toprettyxml(indent="  ")
-
-
-def generate_cloze_xml(out_path_it, out_path_ja):
-
-    en_sent, it_sent, ja_sent = read_sentences()
-
-    with open("tatoeba/en_ja_links.tsv", mode='r', encoding='utf8') as tsv:
-        reader = csv.reader(tsv, delimiter='\t')
-        en_ja = dict([(row[0], row[1]) for row in reader])
-
-    with open("tatoeba/en_it_links.tsv", mode='r', encoding='utf8') as tsv:
-        reader = csv.reader(tsv, delimiter='\t')
-        en_it = dict([(row[0], row[1]) for row in reader])
-
-    root_it = ElementTree.Element('sentences')
-    root_ja = ElementTree.Element('sentences')
-
-    length = str(len(en_sent))
-    sentId = 1
-    for count, enId, in enumerate(en_sent.keys()):
-        print("\rElement " + str(count) + " of " + length, end='')
-        itId = en_it.get(enId, None)
-        jaId = en_ja.get(enId, None)
-
-        if itId is not None and jaId is None:
-            sentence = ElementTree.SubElement(root_it, 'sentence', {'id': str(sentId)})
-            sentId = sentId + 1
-            item = ElementTree.SubElement(sentence, 'item', {'lang': 'en', 'tatoebaId': str(enId)})
-            item.text = en_sent[enId][1]
-            item = ElementTree.SubElement(sentence, 'item', {'lang': 'it', 'tatoebaId': str(itId)})
-            item.text = it_sent[itId][1]
-
-        if jaId is not None and itId is None:
-            sentence = ElementTree.SubElement(root_ja, 'sentence', {'id': str(sentId)})
-            sentId = sentId + 1
-            item = ElementTree.SubElement(sentence, 'item', {'lang': 'en', 'tatoebaId': str(enId)})
-            item.text = en_sent[enId][1]
-            item = ElementTree.SubElement(sentence, 'item', {'lang': 'ja', 'tatoebaId': str(jaId)})
-            item.text = ja_sent[jaId][1]
-
-    output = open(out_path_it, 'w', encoding='utf8')
-    output.write(prettify(root_it))
-    output = open(out_path_ja, 'w', encoding='utf8')
-    output.write(prettify(root_ja))
-
-
-def generate_xml(out_path = 'tatoeba.xml'):
-
-    en_sent, it_sent, ja_sent = read_sentences()
-
-    with open("tatoeba/en_ja_links.tsv", mode='r', encoding='utf8') as tsv:
-        reader = csv.reader(tsv, delimiter='\t')
-        en_ja = dict([(row[0], row[1]) for row in reader])
-
-    with open("tatoeba/en_it_links.tsv", mode='r', encoding='utf8') as tsv:
-        reader = csv.reader(tsv, delimiter='\t')
-        en_it = dict([(row[0], row[1]) for row in reader])
-
-    root = ElementTree.Element('sentences')
-    length = str(len(en_ja.items()))
-    sentId = 1
-    for count, (enId, jaId) in enumerate(en_ja.items()):
-        print("\rElement " + str(count) + " of " + length, end='')
-        itId = en_it.get(enId, None)
-        if itId is not None:
-            sentence = ElementTree.SubElement(root, 'sentence', {'id': str(sentId)})
-            sentId = sentId + 1
-            item = ElementTree.SubElement(sentence, 'item', {'lang': 'en', 'tatoebaId': str(enId)})
-            item.text = en_sent[enId][1]
-            item = ElementTree.SubElement(sentence, 'item', {'lang': 'ja', 'tatoebaId': str(jaId)})
-            item.text = ja_sent[jaId][1]
-            item = ElementTree.SubElement(sentence, 'item', {'lang': 'it', 'tatoebaId': str(itId)})
-            item.text = it_sent[itId][1]
-
-    output = open(out_path, 'w', encoding='utf8')
-    output.write(prettify(root))
-
-
-def coupled_links():
-    """
-    Script used to obtain the links between couples of languages
+    Script used to save in a file the tags associated to a certain set of sentences.
+    :param sent_file: the name of the file containing the sentences
     """
 
-    en_sent, it_sent, ja_sent = read_sentences()
+    sentences = read_sentences(os.path.join(TATOEBA_PATH, sent_file))
+    filename = sent_file.replace('_sentences.tsv', '_tags.tsv')
+    output = open(os.path.join(TATOEBA_PATH, filename), mode='w', encoding='utf8')
 
-    en_ja = open("tatoeba/en_ja_links.tsv", mode='w', encoding='utf8')
-    en_it = open("tatoeba/en_it_links.tsv", mode='w', encoding='utf8')
-
-    with open("links.tsv", mode='r', encoding='utf8') as tsv_file:
+    with open(os.path.join(TATOEBA_PATH, TAGS), mode='r', encoding='utf8') as tsv_file:
         reader = csv.reader(tsv_file, delimiter='\t')
-        for count, row in enumerate(reader):
-            if row[0] in en_sent:
-                print("\rReading line " + str(count) + " of 17.318.501", end='')
-                if row[1] in ja_sent:
-                    en_ja.write(row[0] + "\t" + row[1] + "\n")
-                if row[1] in it_sent:
-                    en_it.write(row[0] + "\t" + row[1] + "\n")
+        for row in reader:
+            if row[0] in sentences:
+                output.write(row[0] + "\t" + row[1] + "\n")
 
 
-def read_sentences():
+def coupled_links(lang1_file, lang2_file):
+    """
+    Script used to save in a file the links between sentences in two languages
+    :param: path_lang1: the path to the file containing the first language sentences
+    :param: path_lang2 the path to the file containing the second language sentences
+    """
+
+    lang1_sents = read_sentences(os.path.join(TATOEBA_PATH, lang1_file))
+    lang2_sents = read_sentences(os.path.join(TATOEBA_PATH, lang2_file))
+
+    filename = lang1_file[0:3] + '_' + lang2_file[0:3] + '_links.tsv'
+    output = open(os.path.join(TATOEBA_PATH, filename), mode='w', encoding='utf8')
+
+    if not os.path.exists(os.path.join(TATOEBA_PATH, COUPLED_LINKS)):
+        print("Downloading links.tsv from tatoeba.org..", end="")
+        filename = wget.download(TATOEBA_LINKS_URL, TATOEBA_PATH)
+        print("\rExtracting archive...", end="")
+        tar = tarfile.open(filename)
+        tar.extractall(TATOEBA_PATH)
+        tar.close()
+        os.remove(filename)
+        print("\rCompleted!")
+
+    with open(os.path.join(TATOEBA_PATH, COUPLED_LINKS), mode='r', encoding='utf8') as tsv_file:
+        reader = csv.reader(tsv_file, delimiter='\t')
+        for row in reader:
+            if row[0] in lang1_sents and row[1] in lang2_sents:
+                output.write(row[0] + "\t" + row[1] + "\n")
+
+
+def read_sentences(path):
     """
     Method for readings sentences from tatoeba files.
-    @:return eng_sentences, ita_sentences, jap_sentences
+    :param: path: the path to the tsv file containing the sentences
+    :return: dict of sentencese in the form {tatoebaId : (lang, sentence)}
     """
     # Reading sentences from files and adding them to the sentences dictionary
-    with open("tatoeba/en/en_sentences.tsv", mode='r', encoding='utf8') as tsv_file:
+    with open(path, mode='r', encoding='utf8') as tsv_file:
         reader = csv.reader(tsv_file, delimiter='\t')
-        eng_sentences = dict([(row[0], tuple([row[1], row[2]])) for row in reader])
-        print("Read English sentences.")
+        sentences = dict([(row[0], tuple([row[1], row[2]])) for row in reader])
+        print("Read sentences.")
 
-    with open("it/it_sentences.tsv.", mode='r', encoding='utf8') as tsv_file:
-        reader = csv.reader(tsv_file, delimiter='\t')
-        ita_sentences = dict([(row[0], tuple([row[1], row[2]])) for row in reader])
-        print("Read Italian sentences.")
-
-    with open("tatoeba/ja/ja_sentences.tsv", mode='r', encoding='utf8') as tsv_file:
-        reader = csv.reader(tsv_file, delimiter='\t')
-        jap_sentences = dict([(row[0], tuple([row[1], row[2]])) for row in reader])
-        print("Read Japanese sentences.")
-
-    return eng_sentences, ita_sentences, jap_sentences
+    return sentences
 
 
 if __name__ == '__main__':
 
-    generate_cloze_xml('tatoeba/tatoeba_en_it.xml', 'tatoeba_en_ja.xml')
+    labels = {}
+    with open(os.path.join(TATOEBA_PATH, 'eng_tags.tsv'), mode='r') as tsv:
+        reader = csv.reader(tsv, delimiter='\t')
+        for line in reader:
+            if line[1] in labels:
+                labels[line[1]] += 1
+            else:
+                labels[line[1]] = 1
+
+    labels = {k: v for k, v in sorted(labels.items(), key=lambda item: item[1], reverse=True)}
+
+    with open('tagsnum.txt', mode='w') as out:
+        for k, v in labels.items():
+            if v > 80:
+                out.write(str(k) + ": " + str(v) + "\n")

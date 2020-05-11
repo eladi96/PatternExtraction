@@ -119,28 +119,28 @@ class ItalianTokenizer:
 
     @staticmethod
     def tokenize(sent):
-        return Text(sent, hint_language_code='it').words
+        return Text(sent, hint_language_code='ita').words
 
     # After calling the pos_tags property once,
     # the words objects will carry the POS tags.
     # print(text.words[0].pos_tag)
     @staticmethod
     def pos_tags(sent):
-        return Text(sent, hint_language_code='it').pos_tags
+        return Text(sent, hint_language_code='ita').pos_tags
 
 
 class EnglishTokenizer:
 
     @staticmethod
     def tokenize(sent):
-        return Text(sent, hint_language_code='en').words
+        return Text(sent, hint_language_code='eng').words
 
     # After calling the pos_tags property once,
     # the words objects will carry the POS tags.
     # print(text.words[0].pos_tag)
     @staticmethod
     def pos_tags(sent):
-        return Text(sent, hint_language_code='en').pos_tags
+        return Text(sent, hint_language_code='eng').pos_tags
 
 
 if __name__ == '__main__':
@@ -152,17 +152,17 @@ if __name__ == '__main__':
     print(jptk.pos_tags_kytea("彼は時々変です"))
     print("MeCab:", end=" ")
     print(jptk.pos_tags_mecab("彼は時々変です"))
-    print("Polyglot en:", end=" ")
+    print("Polyglot eng:", end=" ")
     print(entk.pos_tags("Sometimes he can be a strange guy"))
-    print("Polyglot it:", end=" ")
+    print("Polyglot ita:", end=" ")
     print(ittk.pos_tags("A volte può essere un tizio strano"))
 
     """
     Result:
     Kytea: [('彼', 'PRON'), ('は', 'PART'), ('時々', 'NOUN'), ('変', 'NOUN'), ('で', 'AUX'), ('す', 'TAIL')]
     MeCab: [('彼', 'NOUN'), ('は', 'PART'), ('時々', 'ADV'), ('変', 'NOUN'), ('です', 'AUX')]
-    Polyglot en: [('Sometimes', 'ADV'), ('he', 'PRON'), ('can', 'AUX'), ('be', 'VERB'), ('a', 'DET'),
+    Polyglot eng: [('Sometimes', 'ADV'), ('he', 'PRON'), ('can', 'AUX'), ('be', 'VERB'), ('a', 'DET'),
                   ('strange', 'ADJ'), ('guy', 'NOUN')]
-    Polyglot it: [('A', 'ADP'), ('volte', 'NOUN'), ('può', 'PROPN'), ('essere', 'VERB'), ('un', 'DET'),
+    Polyglot ita: [('A', 'ADP'), ('volte', 'NOUN'), ('può', 'PROPN'), ('essere', 'VERB'), ('un', 'DET'),
                   ('tizio', 'NOUN'), ('strano', 'ADJ')]
     """
