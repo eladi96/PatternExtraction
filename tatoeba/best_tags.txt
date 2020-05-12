@@ -1,7 +1,6 @@
 location: 17396
 request: 3795
 weather: 1551
-relatives: 1311
 duration: 1239
 language: 1210
 idiom: 1134
@@ -11,7 +10,6 @@ sports: 963
 advice: 958
 school: 880
 ability: 860
-Christmas: 821
 dialogue: 818
 comparison: 754
 romance: 700
@@ -21,7 +19,6 @@ offer: 464
 musical instrument: 454
 suggestion: 443
 year: 420
-alcoholic drinks: 345
 obligation: 327
 likes: 312
 necessity: 310
@@ -35,34 +32,5 @@ permission: 244
 gambling: 230
 reason: 229
 restaurant: 218
-possibility: 214
-courtroom: 212
-tea party: 204
-future: 192
-colloquial: 177
-certainty: 174
-directions: 171
-dislikes: 170
-vulgar: 159
-shopping: 156
-proverb-like: 155
-appreciation: 154
-invitation: 153
-fact: 145
-archaic: 141
-food: 131
-regret: 125
-death: 124
-hotel: 117
-hospital: 116
-preference: 116
-prediction: 116
-apology: 108
-health: 95
-money: 93
-job: 93
-compliment: 89
-humorous: 88
-maths: 83
-animals: 83
-music: 81
+possibility: 214 #sentences that express the possibility of something to happen
+courtroom: 212 #sentences you'll likely to hear in courtroom

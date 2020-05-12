@@ -12,9 +12,10 @@ TATOEBA_LINKS_URL = 'https://downloads.tatoeba.org/exports/links.tar.bz2'
 COUPLED_LINKS = 'links.csv'
 TAGS = 'tags.csv'
 ENG_SENT = 'eng_sentences.tsv'
-ENG_TAGS = 'eng_tags.tsv'
 ITA_SENT = 'ita_sentences.tsv'
 JPN_SENT = 'jpn_sentences.tsv'
+ENG_TAGS = 'eng_tags.tsv'
+BEST_TAGS = 'best_tags.txt'
 
 
 # def check_well_formed_xml(path):
@@ -110,6 +111,30 @@ JPN_SENT = 'jpn_sentences.tsv'
 #
 #     output = open(out_path, 'w', encoding='utf8')
 #     output.write(prettify(root))
+
+def tagged_sentences(destination):
+    """
+    Script used to generate a file containing 200 sentences per tag
+    :param destination: name of the destination file
+    """
+    with open(os.path.join(TATOEBA_PATH, BEST_TAGS), mode='r') as file:
+        tags_list = [line.split(':')[0] for line in file]
+        tags_list.reverse()
+
+    sentences = read_sentences(ENG_SENT)
+    output = open(os.path.join(TATOEBA_PATH, destination), mode='w')
+    for tag in tags_list:
+        count = 1
+        with open(os.path.join(TATOEBA_PATH, ENG_TAGS)) as tsv:
+            reader = csv.reader(tsv, delimiter='\t')
+            gen = (row for row in reader if count <= 200)
+            for row in gen:
+                if row[1] == tag and sentences.get(row[0], None) is not None:
+                    output.write(str(tag) + '\t' + str(count) + "\t" + sentences.pop(row[0])[1] + "\n")
+                    count += 1
+    output.close()
+
+
 def sentences_tags(sent_file):
     """
     Script used to save in a file the tags associated to a certain set of sentences.
@@ -157,14 +182,14 @@ def coupled_links(lang1_file, lang2_file):
                 output.write(row[0] + "\t" + row[1] + "\n")
 
 
-def read_sentences(path):
+def read_sentences(filename):
     """
     Method for readings sentences from tatoeba files.
     :param: path: the path to the tsv file containing the sentences
     :return: dict of sentencese in the form {tatoebaId : (lang, sentence)}
     """
     # Reading sentences from files and adding them to the sentences dictionary
-    with open(path, mode='r', encoding='utf8') as tsv_file:
+    with open(os.path.join(TATOEBA_PATH, filename), mode='r', encoding='utf8') as tsv_file:
         reader = csv.reader(tsv_file, delimiter='\t')
         sentences = dict([(row[0], tuple([row[1], row[2]])) for row in reader])
         print("Read sentences.")
@@ -172,20 +197,4 @@ def read_sentences(path):
     return sentences
 
 
-if __name__ == '__main__':
-
-    labels = {}
-    with open(os.path.join(TATOEBA_PATH, 'eng_tags.tsv'), mode='r') as tsv:
-        reader = csv.reader(tsv, delimiter='\t')
-        for line in reader:
-            if line[1] in labels:
-                labels[line[1]] += 1
-            else:
-                labels[line[1]] = 1
-
-    labels = {k: v for k, v in sorted(labels.items(), key=lambda item: item[1], reverse=True)}
-
-    with open('tagsnum.txt', mode='w') as out:
-        for k, v in labels.items():
-            if v > 80:
-                out.write(str(k) + ": " + str(v) + "\n")
+# if __name__ == '__main__':
