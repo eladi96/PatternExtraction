@@ -23,7 +23,6 @@ obligation: 327
 likes: 312
 necessity: 310
 exclamative: 303
-ambiguous: 298
 age: 256
 mathematics: 254
 ignorance: 249

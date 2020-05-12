@@ -4,6 +4,8 @@ files downloaded from tatoeba.org, aligning the sentences from the three differe
 """
 import csv
 import os
+import random
+
 import wget
 import tarfile
 
@@ -16,6 +18,7 @@ ITA_SENT = 'ita_sentences.tsv'
 JPN_SENT = 'jpn_sentences.tsv'
 ENG_TAGS = 'eng_tags.tsv'
 BEST_TAGS = 'best_tags.txt'
+TAGGED_SENT = 'tagged_sentences.tsv'
 
 
 # def check_well_formed_xml(path):
@@ -111,6 +114,34 @@ BEST_TAGS = 'best_tags.txt'
 #
 #     output = open(out_path, 'w', encoding='utf8')
 #     output.write(prettify(root))
+def generate_dataset():
+    train = []
+    valid = []
+    test = []
+
+    with open(os.path.join(TATOEBA_PATH, BEST_TAGS), mode='r') as file:
+        tags_list = [line.split(':')[0] for line in file]
+        tags_list.reverse()
+
+    for tag in tags_list:
+        with open(os.path.join(TATOEBA_PATH, TAGGED_SENT), mode='r') as tsv:
+            reader = csv.reader(tsv, delimiter='\t')
+            samples = [line for line in reader if line[0] == tag]
+            random.shuffle(samples)
+            for count, sample in enumerate(samples):
+                if count < 120:
+                    train.append(sample)
+                if 120 <= count < 160:
+                    valid.append(sample)
+                if count >= 160:
+                    test.append(sample)
+
+    random.shuffle(train)
+    random.shuffle(valid)
+    random.shuffle(test)
+    return train, valid, test
+
+
 
 def tagged_sentences(destination):
     """
@@ -197,4 +228,4 @@ def read_sentences(filename):
     return sentences
 
 
-# if __name__ == '__main__':
+if __name__ == '__main__':
