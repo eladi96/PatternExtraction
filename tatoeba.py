@@ -115,6 +115,9 @@ TAGGED_SENT = 'tagged_sentences.tsv'
 #     output = open(out_path, 'w', encoding='utf8')
 #     output.write(prettify(root))
 def generate_dataset():
+    """
+    Script used to split the tagged sentences into training, validation and test set.
+    """
     train = []
     valid = []
     test = []
@@ -140,7 +143,6 @@ def generate_dataset():
     random.shuffle(valid)
     random.shuffle(test)
     return train, valid, test
-
 
 
 def tagged_sentences(destination):
@@ -226,6 +228,3 @@ def read_sentences(filename):
         print("Read sentences.")
 
     return sentences
-
-
-if __name__ == '__main__':
