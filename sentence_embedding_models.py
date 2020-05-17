@@ -104,9 +104,9 @@ if __name__ == '__main__':
 
     print("Loading the dataset...", end=" ")
     train, validation, test = tatoeba.generate_dataset()
-    train_x = [sample[2] for sample in train]
-    validation_x = [sample[2] for sample in validation]
-    test_x = [sample[2] for sample in test]
+    train_x = [sample[3] for sample in train]
+    validation_x = [sample[3] for sample in validation]
+    test_x = [sample[3] for sample in test]
 
     # Then we can format our text samples and labels into tensors that can be fed into a neural network. To do this,
     # we will rely on Keras utilities keras.preprocessing.text.Tokenizer and keras.preprocessing.sequence.pad_sequences.

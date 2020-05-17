@@ -5,7 +5,6 @@ files downloaded from tatoeba.org, aligning the sentences from the three differe
 import csv
 import os
 import random
-
 import wget
 import tarfile
 
@@ -21,99 +20,6 @@ BEST_TAGS = 'best_tags.txt'
 TAGGED_SENT = 'tagged_sentences.tsv'
 
 
-# def check_well_formed_xml(path):
-#
-#     with open(path, mode='r', encoding='utf8') as file:
-#         for count, row in enumerate(file):
-#             if row[0] != "<" and row[0] != " ":
-#                 print(row)
-#                 print("Error in row " + str(count))
-#                 input()
-#     print("Check completed.")
-#
-#
-# def prettify(elem):
-#     """Return a pretty-printed XML string for the Element.
-#     """
-#     rough_string = ElementTree.tostring(elem, 'utf-8')
-#     reparsed = minidom.parseString(rough_string)
-#     return reparsed.toprettyxml(indent="  ")
-#
-#
-# def generate_cloze_xml(out_path_it, out_path_ja):
-#
-#     en_sent, it_sent, ja_sent = read_sentences()
-#
-#     with open("tatoeba/en_ja_links.tsv", mode='r', encoding='utf8') as tsv:
-#         reader = csv.reader(tsv, delimiter='\t')
-#         en_ja = dict([(row[0], row[1]) for row in reader])
-#
-#     with open("tatoeba/en_it_links.tsv", mode='r', encoding='utf8') as tsv:
-#         reader = csv.reader(tsv, delimiter='\t')
-#         en_it = dict([(row[0], row[1]) for row in reader])
-#
-#     root_it = ElementTree.Element('sentences')
-#     root_ja = ElementTree.Element('sentences')
-#
-#     length = str(len(en_sent))
-#     sentId = 1
-#     for count, enId, in enumerate(en_sent.keys()):
-#         print("\rElement " + str(count) + " of " + length, end='')
-#         itId = en_it.get(enId, None)
-#         jaId = en_ja.get(enId, None)
-#
-#         if itId is not None and jaId is None:
-#             sentence = ElementTree.SubElement(root_it, 'sentence', {'id': str(sentId)})
-#             sentId = sentId + 1
-#             item = ElementTree.SubElement(sentence, 'item', {'lang': 'eng', 'tatoebaId': str(enId)})
-#             item.text = en_sent[enId][1]
-#             item = ElementTree.SubElement(sentence, 'item', {'lang': 'ita', 'tatoebaId': str(itId)})
-#             item.text = it_sent[itId][1]
-#
-#         if jaId is not None and itId is None:
-#             sentence = ElementTree.SubElement(root_ja, 'sentence', {'id': str(sentId)})
-#             sentId = sentId + 1
-#             item = ElementTree.SubElement(sentence, 'item', {'lang': 'eng', 'tatoebaId': str(enId)})
-#             item.text = en_sent[enId][1]
-#             item = ElementTree.SubElement(sentence, 'item', {'lang': 'jpn', 'tatoebaId': str(jaId)})
-#             item.text = ja_sent[jaId][1]
-#
-#     output = open(out_path_it, 'w', encoding='utf8')
-#     output.write(prettify(root_it))
-#     output = open(out_path_ja, 'w', encoding='utf8')
-#     output.write(prettify(root_ja))
-#
-#
-# def generate_xml(out_path = 'tatoeba.xml'):
-#
-#     en_sent, it_sent, ja_sent = read_sentences()
-#
-#     with open("tatoeba/en_ja_links.tsv", mode='r', encoding='utf8') as tsv:
-#         reader = csv.reader(tsv, delimiter='\t')
-#         en_ja = dict([(row[0], row[1]) for row in reader])
-#
-#     with open("tatoeba/en_it_links.tsv", mode='r', encoding='utf8') as tsv:
-#         reader = csv.reader(tsv, delimiter='\t')
-#         en_it = dict([(row[0], row[1]) for row in reader])
-#
-#     root = ElementTree.Element('sentences')
-#     length = str(len(en_ja.items()))
-#     sentId = 1
-#     for count, (enId, jaId) in enumerate(en_ja.items()):
-#         print("\rElement " + str(count) + " of " + length, end='')
-#         itId = en_it.get(enId, None)
-#         if itId is not None:
-#             sentence = ElementTree.SubElement(root, 'sentence', {'id': str(sentId)})
-#             sentId = sentId + 1
-#             item = ElementTree.SubElement(sentence, 'item', {'lang': 'eng', 'tatoebaId': str(enId)})
-#             item.text = en_sent[enId][1]
-#             item = ElementTree.SubElement(sentence, 'item', {'lang': 'jpn', 'tatoebaId': str(jaId)})
-#             item.text = ja_sent[jaId][1]
-#             item = ElementTree.SubElement(sentence, 'item', {'lang': 'ita', 'tatoebaId': str(itId)})
-#             item.text = it_sent[itId][1]
-#
-#     output = open(out_path, 'w', encoding='utf8')
-#     output.write(prettify(root))
 def generate_dataset():
     """
     Script used to split the tagged sentences into training, validation and test set.
@@ -132,11 +38,11 @@ def generate_dataset():
             samples = [line for line in reader if line[0] == tag]
             random.shuffle(samples)
             for count, sample in enumerate(samples):
-                if count < 120:
+                if count < 160:
                     train.append(sample)
-                if 120 <= count < 160:
+                if 160 <= count < 180:
                     valid.append(sample)
-                if count >= 160:
+                if count >= 180:
                     test.append(sample)
 
     random.shuffle(train)
@@ -147,7 +53,8 @@ def generate_dataset():
 
 def tagged_sentences(destination):
     """
-    Script used to generate a file containing 200 sentences per tag
+    Script used to generate a file containing 200 sentences per tag.
+    Every row of the output file will contain [tag, count, tatoebaId, sentence]
     :param destination: name of the destination file
     """
     with open(os.path.join(TATOEBA_PATH, BEST_TAGS), mode='r') as file:
@@ -163,7 +70,8 @@ def tagged_sentences(destination):
             gen = (row for row in reader if count <= 200)
             for row in gen:
                 if row[1] == tag and sentences.get(row[0], None) is not None:
-                    output.write(str(tag) + '\t' + str(count) + "\t" + sentences.pop(row[0])[1] + "\n")
+                    sent = sentences.pop(row[0])
+                    output.write(str(tag) + '\t' + str(count) + "\t" + row[0] + "\t" + sent[1] + "\n")
                     count += 1
     output.close()
 
