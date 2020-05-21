@@ -118,9 +118,9 @@ if __name__ == '__main__':
     MAX_SEQUENCE_LENGTH = 0
     for sent in train_x:
         MAX_SEQUENCE_LENGTH = len(sent) if len(sent) > MAX_SEQUENCE_LENGTH else MAX_SEQUENCE_LENGTH
-    train_x = pad_sequences(train_x, maxlen=MAX_SEQUENCE_LENGTH, padding='post')
-    validation_x = pad_sequences(validation_x, maxlen=MAX_SEQUENCE_LENGTH, padding='post')
-    test_x = pad_sequences(test_x, maxlen=MAX_SEQUENCE_LENGTH, padding='post')
+    train_x = pad_sequences(train_x, maxlen=MAX_SEQUENCE_LENGTH, padding='pre')
+    validation_x = pad_sequences(validation_x, maxlen=MAX_SEQUENCE_LENGTH, padding='pre')
+    test_x = pad_sequences(test_x, maxlen=MAX_SEQUENCE_LENGTH, padding='pre')
     print("Done.")
 
     # ==================================================================================================================
@@ -156,6 +156,8 @@ if __name__ == '__main__':
                                 trainable=False)
 
     embedded_sequences = embedding_layer(sequence_input)
+    # Mask for the layers that can handle it
+    mask = embedding_layer.compute_mask(sequence_input)
     preds = Dense(NUM_LABELS, activation='softmax')
 
     # MODEL 1 - Conv1D
@@ -166,26 +168,26 @@ if __name__ == '__main__':
     use_model(model_1, 'model_1.h5', 'model_1_summary.txt', 'model_1_history.png')
 
     # MODEL 2 - LSTM
-    x = LSTM(EMBEDDING_DIM)(embedded_sequences)
+    x = LSTM(EMBEDDING_DIM)(embedded_sequences, mask=mask)
     output = preds(x)
     model_2 = Model(sequence_input, output, name='model_2')
     use_model(model_2, 'model_2.h5', 'model_2_summary.txt', 'model_2_history.png')
 
     # # MODEL 3 - GRU
-    x = GRU(EMBEDDING_DIM)(embedded_sequences)
+    x = GRU(EMBEDDING_DIM)(embedded_sequences, mask=mask)
     output = preds(x)
     model_3 = Model(sequence_input, output, name='model_3')
     use_model(model_3, 'model_3.h5', 'model_3_summary.txt', 'model_3_history.png')
 
     # MODEL 4 - Bidirectional with GRU - CONCAT - DENSE
-    x = Bidirectional(GRU(EMBEDDING_DIM))(embedded_sequences)
+    x = Bidirectional(GRU(EMBEDDING_DIM))(embedded_sequences, mask=mask)
     x = Dense(300, activation='relu')(x)
     output = preds(x)
     model_4 = Model(sequence_input, output, name='model_4')
     use_model(model_4, 'model_4.h5', 'model_4_summary.txt', 'model_4_history.png')
 
     # MODEL 5 - Bidirection with GRU - AVG
-    x = Bidirectional(GRU(EMBEDDING_DIM), merge_mode='ave')(embedded_sequences)
+    x = Bidirectional(GRU(EMBEDDING_DIM), merge_mode='ave')(embedded_sequences, mask=mask)
     output = preds(x)
     model_5 = Model(sequence_input, output, name='model_5')
     use_model(model_5, 'model_5.h5', 'model_5_summary.txt', 'model_5_history.png')
