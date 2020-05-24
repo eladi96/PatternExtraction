@@ -70,8 +70,7 @@ def tagged_sentences(destination):
             gen = (row for row in reader if count <= 200)
             for row in gen:
                 if row[1] == tag and sentences.get(row[0], None) is not None:
-                    sent = sentences.pop(row[0])
-                    output.write(str(tag) + '\t' + str(count) + "\t" + row[0] + "\t" + sent[1] + "\n")
+                    output.write(str(tag) + '\t' + str(count) + "\t" + row[0] + "\t" + sentences.pop(row[0]) + "\n")
                     count += 1
     output.close()
 
@@ -127,12 +126,12 @@ def read_sentences(filename):
     """
     Method for readings sentences from tatoeba files.
     :param: path: the path to the tsv file containing the sentences
-    :return: dict of sentencese in the form {tatoebaId : (lang, sentence)}
+    :return: dict of sentencese in the form {tatoebaId : sentence}
     """
     # Reading sentences from files and adding them to the sentences dictionary
     with open(os.path.join(TATOEBA_PATH, filename), mode='r', encoding='utf8') as tsv_file:
         reader = csv.reader(tsv_file, delimiter='\t')
-        sentences = dict([(row[0], tuple([row[1], row[2]])) for row in reader])
+        sentences = dict([(row[0], row[2]) for row in reader])
         print("Read sentences.")
 
     return sentences

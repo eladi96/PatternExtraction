@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
     if not os.path.exists(os.path.join(MODELS_DIR, TOKENIZER)):
         print("Tokenizer not found.")
-        sentences = [elem[1] for key, elem in tatoeba.read_sentences(tatoeba.ENG_SENT).items()]
+        sentences = [elem for key, elem in tatoeba.read_sentences(tatoeba.ENG_SENT).items()]
         tokenizer = Tokenizer()
         print("Building the tokenizer...", end=" ")
         tokenizer.fit_on_texts(sentences)
