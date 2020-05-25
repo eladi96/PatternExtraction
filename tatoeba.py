@@ -7,17 +7,7 @@ import os
 import random
 import wget
 import tarfile
-
-TATOEBA_PATH = 'tatoeba'
-TATOEBA_LINKS_URL = 'https://downloads.tatoeba.org/exports/links.tar.bz2'
-COUPLED_LINKS = 'links.csv'
-TAGS = 'tags.csv'
-ENG_SENT = 'eng_sentences.tsv'
-ITA_SENT = 'ita_sentences.tsv'
-JPN_SENT = 'jpn_sentences.tsv'
-ENG_TAGS = 'eng_tags.tsv'
-BEST_TAGS = 'best_tags.txt'
-TAGGED_SENT = 'tagged_sentences.tsv'
+from constants import *
 
 
 def generate_dataset():

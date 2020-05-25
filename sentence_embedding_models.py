@@ -10,9 +10,7 @@ import os.path as path
 import fasttext
 import pickle
 import os
-
-MODELS_DIR = 'models'
-TOKENIZER = 'tokenizer.pickle'
+from constants import *
 
 
 def plot_history(h, filename):
@@ -63,7 +61,7 @@ if __name__ == '__main__':
 
     if not os.path.exists(os.path.join(MODELS_DIR, TOKENIZER)):
         print("Tokenizer not found.")
-        sentences = [elem for key, elem in tatoeba.read_sentences(tatoeba.ENG_SENT).items()]
+        sentences = [elem for key, elem in tatoeba.read_sentences(ENG_SENT).items()]
         tokenizer = Tokenizer()
         print("Building the tokenizer...", end=" ")
         tokenizer.fit_on_texts(sentences)
@@ -88,7 +86,6 @@ if __name__ == '__main__':
     embeddings_index = fasttext.load_model('fasttext/cc.en.300.bin')
     print("Done")
 
-    EMBEDDING_DIM = 300
     # At this point we can leverage our embedding_index dictionary and our word_index to compute our embedding matrix:
     # Matrice in cui ad ogni indice corrisponde l'embedding vector del token associato a quell'indice
     embedding_matrix = np.zeros((len(word_index) + 1, EMBEDDING_DIM))
@@ -115,7 +112,6 @@ if __name__ == '__main__':
     test_x = tokenizer.texts_to_sequences(test_x)
     tokenizer = None
 
-    MAX_SEQUENCE_LENGTH = 0
     for sent in train_x:
         MAX_SEQUENCE_LENGTH = len(sent) if len(sent) > MAX_SEQUENCE_LENGTH else MAX_SEQUENCE_LENGTH
     train_x = pad_sequences(train_x, maxlen=MAX_SEQUENCE_LENGTH, padding='pre')
@@ -128,7 +124,6 @@ if __name__ == '__main__':
 
     print("One-hot encoding the labels...", end=" ")
     labels = list(set([sample[0] for sample in train]))
-    NUM_LABELS = len(labels)
 
     # Empty arrays to hold labels as one hot encodings
     train_y = np.zeros((len(train_x), NUM_LABELS), dtype=np.int8)
