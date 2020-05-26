@@ -83,7 +83,7 @@ if __name__ == '__main__':
     # PREPARING THE EMBEDDINGS
     # Next, we compute an index mapping words to known embeddings, by parsing the data dump of pre-trained embeddings:
     print("Loading embeddings...", end=" ")
-    embeddings_index = fasttext.load_model('fasttext/cc.en.300.bin')
+    embeddings_index = fasttext.load_model('fastText/cc.en.300.bin')
     print("Done")
 
     # At this point we can leverage our embedding_index dictionary and our word_index to compute our embedding matrix:
@@ -112,6 +112,7 @@ if __name__ == '__main__':
     test_x = tokenizer.texts_to_sequences(test_x)
     tokenizer = None
 
+    MAX_SEQUENCE_LENGTH = 0
     for sent in train_x:
         MAX_SEQUENCE_LENGTH = len(sent) if len(sent) > MAX_SEQUENCE_LENGTH else MAX_SEQUENCE_LENGTH
     train_x = pad_sequences(train_x, maxlen=MAX_SEQUENCE_LENGTH, padding='pre')
@@ -168,7 +169,7 @@ if __name__ == '__main__':
     model_2 = Model(sequence_input, output, name='model_2')
     use_model(model_2, 'model_2.h5', 'model_2_summary.txt', 'model_2_history.png')
 
-    # # MODEL 3 - GRU
+    # MODEL 3 - GRU
     x = GRU(EMBEDDING_DIM)(embedded_sequences, mask=mask)
     output = preds(x)
     model_3 = Model(sequence_input, output, name='model_3')
@@ -176,7 +177,7 @@ if __name__ == '__main__':
 
     # MODEL 4 - Bidirectional with GRU - CONCAT - DENSE
     x = Bidirectional(GRU(EMBEDDING_DIM))(embedded_sequences, mask=mask)
-    x = Dense(300, activation='relu')(x)
+    x = Dense(EMBEDDING_DIM, activation='relu')(x)
     output = preds(x)
     model_4 = Model(sequence_input, output, name='model_4')
     use_model(model_4, 'model_4.h5', 'model_4_summary.txt', 'model_4_history.png')

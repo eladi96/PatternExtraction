@@ -4,6 +4,7 @@ TOKENIZER = 'tokenizer.pickle'
 TATOEBA_PATH = 'tatoeba'
 TATOEBA_LINKS_URL = 'https://downloads.tatoeba.org/exports/links.tar.bz2'
 COUPLED_LINKS = 'links.csv'
+ENG_JAP_LINKS = 'eng_jpn_links.tsv'
 TAGS = 'tags.csv'
 ENG_SENT = 'eng_sentences.tsv'
 ITA_SENT = 'ita_sentences.tsv'
@@ -14,5 +15,4 @@ TAGGED_SENT = 'tagged_sentences.tsv'
 
 # VALUES
 EMBEDDING_DIM = 300
-MAX_SEQUENCE_LENGTH = 0
 NUM_LABELS = 35

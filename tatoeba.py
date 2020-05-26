@@ -27,12 +27,14 @@ def generate_dataset():
             reader = csv.reader(tsv, delimiter='\t')
             samples = [line for line in reader if line[0] == tag]
             random.shuffle(samples)
+            train_dim = (len(samples) // 100) * 80
+            val_dim = (len(samples) // 100) * 10
             for count, sample in enumerate(samples):
-                if count < 160:
+                if count < train_dim:
                     train.append(sample)
-                if 160 <= count < 180:
+                if train_dim <= count < train_dim + val_dim:
                     valid.append(sample)
-                if count >= 180:
+                if count >= train_dim + val_dim:
                     test.append(sample)
 
     random.shuffle(train)
@@ -51,7 +53,11 @@ def tagged_sentences(destination):
         tags_list = [line.split(':')[0] for line in file]
         tags_list.reverse()
 
-    sentences = read_sentences(ENG_SENT)
+    eng_sentences = read_sentences(ENG_SENT)
+    jpn_sentences = read_sentences(JPN_SENT)
+    links = {row[0]: row[1] for row in
+             csv.reader(open(os.path.join(TATOEBA_PATH, ENG_JAP_LINKS), mode='r'), delimiter='\t')}
+
     output = open(os.path.join(TATOEBA_PATH, destination), mode='w')
     for tag in tags_list:
         count = 1
@@ -59,8 +65,13 @@ def tagged_sentences(destination):
             reader = csv.reader(tsv, delimiter='\t')
             gen = (row for row in reader if count <= 200)
             for row in gen:
-                if row[1] == tag and sentences.get(row[0], None) is not None:
-                    output.write(str(tag) + '\t' + str(count) + "\t" + row[0] + "\t" + sentences.pop(row[0]) + "\n")
+                print("\r" + str(tag) + " " + str(count), end="")
+                eng_sent = eng_sentences.get(row[0], None)
+                jpn_id = links.get(row[0], None)
+                jpn_sent = jpn_sentences.get(jpn_id, None)
+                if row[1] == tag and eng_sent is not None and jpn_sent is not None:
+                    output.write(str(tag) + '\t' + row[0] + "\t" + eng_sentences.pop(row[0]) + "\t" + jpn_sentences.pop(
+                        jpn_id) + "\n")
                     count += 1
     output.close()
 
@@ -71,7 +82,7 @@ def sentences_tags(sent_file):
     :param sent_file: the name of the file containing the sentences
     """
 
-    sentences = read_sentences(os.path.join(TATOEBA_PATH, sent_file))
+    sentences = read_sentences(sent_file)
     filename = sent_file.replace('_sentences.tsv', '_tags.tsv')
     output = open(os.path.join(TATOEBA_PATH, filename), mode='w', encoding='utf8')
 
@@ -89,8 +100,8 @@ def coupled_links(lang1_file, lang2_file):
     :param: path_lang2 the path to the file containing the second language sentences
     """
 
-    lang1_sents = read_sentences(os.path.join(TATOEBA_PATH, lang1_file))
-    lang2_sents = read_sentences(os.path.join(TATOEBA_PATH, lang2_file))
+    lang1_sents = read_sentences(lang1_file)
+    lang2_sents = read_sentences(lang2_file)
 
     filename = lang1_file[0:3] + '_' + lang2_file[0:3] + '_links.tsv'
     output = open(os.path.join(TATOEBA_PATH, filename), mode='w', encoding='utf8')
@@ -125,3 +136,6 @@ def read_sentences(filename):
         print("Read sentences.")
 
     return sentences
+
+
+# if __name__ == '__main__':
