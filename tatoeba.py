@@ -27,8 +27,11 @@ def generate_dataset():
             reader = csv.reader(tsv, delimiter='\t')
             samples = [line for line in reader if line[0] == tag]
             random.shuffle(samples)
-            train_dim = (len(samples) // 100) * 80
-            val_dim = (len(samples) // 100) * 10
+            train_dim = (len(samples) / 100) * 80
+            val_dim = (len(samples) / 100) * 10
+            if tag == 'courtroom':
+                print(len(samples))
+                print(train_dim, val_dim)
             for count, sample in enumerate(samples):
                 if count < train_dim:
                     train.append(sample)
