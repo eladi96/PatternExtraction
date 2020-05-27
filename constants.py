@@ -1,6 +1,7 @@
 # DIRECTORIES
 MODELS_DIR = 'models'
 TOKENIZER = 'tokenizer.pickle'
+JPN_TOKENIZER = 'jpn_tokenizer.pickle'
 TATOEBA_PATH = 'tatoeba'
 TATOEBA_LINKS_URL = 'https://downloads.tatoeba.org/exports/links.tar.bz2'
 COUPLED_LINKS = 'links.csv'
@@ -11,7 +12,7 @@ ITA_SENT = 'ita_sentences.tsv'
 JPN_SENT = 'jpn_sentences.tsv'
 ENG_TAGS = 'eng_tags.tsv'
 BEST_TAGS = 'best_tags.txt'
-TAGGED_SENT = 'tagged_sentences.tsv'
+TAGGED_SENT = 'tagged_sentences_translated.tsv'
 
 # VALUES
 EMBEDDING_DIM = 300
