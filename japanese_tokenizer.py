@@ -99,6 +99,15 @@ class JapaneseTokenizer:
         self.index_word = dict()
         self.oov_token = oov_token
 
+    def __getstate__(self):
+        attributes = self.__dict__.copy()
+        del attributes['mecab']
+        return attributes
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.mecab = MeCab.Tagger('')
+
     def tokenize(self, sent):
         def get_word(chunk):
             return chunk.split('\t')[0]
