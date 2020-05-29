@@ -1,6 +1,6 @@
 # DIRECTORIES
 MODELS_DIR = 'models'
-TOKENIZER = 'tokenizer.pickle'
+ENG_TOKENIZER = 'eng_tokenizer.pickle'
 JPN_TOKENIZER = 'jpn_tokenizer.pickle'
 TATOEBA_PATH = 'tatoeba'
 TATOEBA_LINKS_URL = 'https://downloads.tatoeba.org/exports/links.tar.bz2'

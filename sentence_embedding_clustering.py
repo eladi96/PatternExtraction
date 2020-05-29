@@ -84,7 +84,7 @@ if __name__ == '__main__':
     embedder = keras.backend.function(model.layers[0].input, model.layers[-2].output)
     MAX_SEQUENCE_LENGTH = model.layers[0].input_shape[0][1]
 
-    with open(join(MODELS_DIR, TOKENIZER), 'rb') as handle:
+    with open(join(MODELS_DIR, ENG_TOKENIZER), 'rb') as handle:
         print("Loading tokenizer...", end=" ")
         tokenizer = pickle.load(handle)
         print("Done.")
@@ -120,7 +120,7 @@ if __name__ == '__main__':
             embedded = embedder(pad_sequences(tokenizer.texts_to_sequences([sent]), maxlen=MAX_SEQUENCE_LENGTH, padding='pre'))
             scores[sent] = cosine_similarity(test[0].reshape(1, -1), embedded[0].reshape(1, -1))
         scores = {k: v for k, v in sorted(scores.items(), key=lambda item: item[1], reverse=True)}
-        for sent, _ in scores.items():
-            print(sent)
+        for sent, score in scores.items():
+            print(sent, score)
         test = input()
 

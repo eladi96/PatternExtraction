@@ -59,7 +59,7 @@ if __name__ == '__main__':
     # ==================================================================================================================
     # PREPARING THE TOKENIZER
 
-    if not os.path.exists(os.path.join(MODELS_DIR, TOKENIZER)):
+    if not os.path.exists(os.path.join(MODELS_DIR, ENG_TOKENIZER)):
         print("Tokenizer not found.")
         sentences = [elem for key, elem in tatoeba.read_sentences(ENG_SENT).items()]
         tokenizer = Tokenizer()
@@ -67,11 +67,11 @@ if __name__ == '__main__':
         tokenizer.fit_on_texts(sentences)
         sentences = None
         print("Done.")
-        with open(os.path.join(MODELS_DIR, TOKENIZER), 'wb') as handle:
+        with open(os.path.join(MODELS_DIR, ENG_TOKENIZER), 'wb') as handle:
             pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
-            print("Tokenizer saved to " + os.path.join(MODELS_DIR, TOKENIZER))
+            print("Tokenizer saved to " + os.path.join(MODELS_DIR, ENG_TOKENIZER))
     else:
-        with open(os.path.join(MODELS_DIR, TOKENIZER), 'rb') as handle:
+        with open(os.path.join(MODELS_DIR, ENG_TOKENIZER), 'rb') as handle:
             print("Loading tokenizer...", end=" ")
             tokenizer = pickle.load(handle)
             print("Done.")
