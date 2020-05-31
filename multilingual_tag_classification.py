@@ -154,7 +154,7 @@ def main():
                                     name='jpn_embedding')
     jpn_mask = jpn_embedding_layer.compute_mask(jpn_input)
 
-    with open(path.join(MODELS_DIR, 'multilingual_models_summary.txt'), mode='w') as file:
+    with open(path.join(MODELS_DIR, 'summary.txt'), mode='w') as file:
 
         # ENGLISH MODEL
         eng_embeddings = eng_embedding_layer(eng_input)
