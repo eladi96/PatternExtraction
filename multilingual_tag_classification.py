@@ -1,11 +1,9 @@
 import keras
-from keras.layers import Embedding, GRU, Input, Dense, Concatenate, Dropout, LSTM, Conv1D
+from keras.layers import Embedding, GRU, Input, Dense, Concatenate, Dropout
 from keras.models import Model
 from keras.preprocessing.sequence import pad_sequences
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 import numpy as np
-from tensorflow.python.keras.models import load_model
-
 import tatoeba
 import os.path as path
 import fasttext
@@ -66,7 +64,7 @@ def main():
         if embedding_vector is not None:
             # words not found in embedding index will be all-zeros.
             eng_embedding_matrix[i] = embedding_vector
-    eng_embeddings_index = None
+    del eng_embeddings_index
     print("Done")
 
     print("Loading jpn embeddings...", end=" ")
@@ -76,7 +74,7 @@ def main():
         embedding_vector = jpn_embeddings_index.get_word_vector(word)
         if embedding_vector is not None:
             jpn_embedding_matrix[i] = embedding_vector
-    jpn_embeddings_index = None
+    del jpn_embeddings_index
     print("Done")
 
     # ==================================================================================================================
@@ -108,6 +106,8 @@ def main():
     valid_x_jpn = pad_sequences(valid_x_jpn, maxlen=JPN_SEQ_LEN)
     test_x_eng = pad_sequences(test_x_eng, maxlen=ENG_SEQ_LEN)
     test_x_jpn = pad_sequences(test_x_jpn, maxlen=JPN_SEQ_LEN)
+    del eng_tokenizer
+    del jpn_tokenizer
     print("Done.")
 
     # ==================================================================================================================
@@ -179,7 +179,6 @@ def main():
         combined_model = Model([eng_input, jpn_input], combined_output, name='combined_model')
         use_model(combined_model, file, [train_x_eng, train_x_jpn], train_y, [valid_x_eng, valid_x_jpn], valid_y,
                   [test_x_eng, test_x_jpn], test_y)
-
 
         # PRETRAINED MODEL
         pretrained = Model([eng_input, jpn_input], combined_output, name='pretrained_model')
