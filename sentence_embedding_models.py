@@ -5,34 +5,12 @@ from keras.preprocessing.sequence import pad_sequences
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 import numpy as np
 import tatoeba
-import matplotlib.pyplot as plt
 import os.path as path
 import fasttext
 import pickle
 import os
 from constants import *
-
-
-def plot_history(h, filename):
-    plt.style.use('ggplot')
-    acc = h.history['accuracy']
-    val_acc = h.history['val_accuracy']
-    loss = h.history['loss']
-    val_loss = h.history['val_loss']
-    ics = range(1, len(acc) + 1)
-
-    plt.figure(figsize=(12, 5))
-    plt.subplot(1, 2, 1)
-    plt.plot(ics, acc, 'b', label='Training acc')
-    plt.plot(ics, val_acc, 'r', label='Validation acc')
-    plt.title('Training and validation accuracy')
-    plt.legend()
-    plt.subplot(1, 2, 2)
-    plt.plot(ics, loss, 'b', label='Training loss')
-    plt.plot(ics, val_loss, 'r', label='Validation loss')
-    plt.title('Training and validation loss')
-    plt.legend()
-    plt.savefig(filename)
+from models.utils import plot_history
 
 
 def use_model(model, chekpoint, summary, plot):
