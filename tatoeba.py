@@ -56,7 +56,7 @@ def tagged_sentences(destination):
     eng_sentences = read_sentences(ENG_SENT)
     jpn_sentences = read_sentences(JPN_SENT)
     links = {row[0]: row[1] for row in
-             csv.reader(open(os.path.join(TATOEBA_PATH, ENG_JAP_LINKS), mode='r'), delimiter='\t')}
+             csv.reader(open(os.path.join(TATOEBA_PATH, ENG_JPN_LINKS), mode='r'), delimiter='\t')}
 
     output = open(os.path.join(TATOEBA_PATH, destination), mode='w')
     for tag in tags_list:

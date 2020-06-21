@@ -94,11 +94,11 @@ def main():
 
     ENG_SEQ_LEN = 0
     for sent in train_x_eng:
-        ENG_SEQ_LEN = len(sent) if len(sent) > ENG_SEQ_LEN else ENG_SEQ_LEN
+        ENG_SEQ_LEN = max(len(sent), ENG_SEQ_LEN)
 
     JPN_SEQ_LEN = 0
     for sent in train_x_jpn:
-        JPN_SEQ_LEN = len(sent) if len(sent) > JPN_SEQ_LEN else JPN_SEQ_LEN
+        JPN_SEQ_LEN = max(len(sent), JPN_SEQ_LEN)
 
     train_x_eng = pad_sequences(train_x_eng, maxlen=ENG_SEQ_LEN)
     train_x_jpn = pad_sequences(train_x_jpn, maxlen=JPN_SEQ_LEN)
@@ -176,9 +176,9 @@ def main():
         merged = Concatenate(name='merging_layer')([eng_recurrent, jpn_recurrent])
         combined_dropout = Dropout(0.5, name='dropout')(merged)
         combined_output = Dense(NUM_LABELS, activation='softmax', name='classification')(combined_dropout)
-        combined_model = Model([eng_input, jpn_input], combined_output, name='combined_model')
-        use_model(combined_model, file, [train_x_eng, train_x_jpn], train_y, [valid_x_eng, valid_x_jpn], valid_y,
-                  [test_x_eng, test_x_jpn], test_y)
+        # combined_model = Model([eng_input, jpn_input], combined_output, name='combined_model')
+        # use_model(combined_model, file, [train_x_eng, train_x_jpn], train_y, [valid_x_eng, valid_x_jpn], valid_y,
+        #           [test_x_eng, test_x_jpn], test_y)
 
         # PRETRAINED MODEL
         pretrained = Model([eng_input, jpn_input], combined_output, name='pretrained_model')
