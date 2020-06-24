@@ -4,12 +4,15 @@ from keras.models import Model
 from keras.preprocessing.sequence import pad_sequences
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 import numpy as np
+from keras_preprocessing.text import Tokenizer
+
 import tatoeba
 import os.path as path
 import fasttext
 import pickle
 import os
 from constants import *
+from japanese_tokenizer import JapaneseTokenizer
 from models.utils import plot_history
 
 
@@ -37,15 +40,39 @@ def main():
     # ==================================================================================================================
     # PREPARING THE TOKENIZERS
 
-    with open(os.path.join(MODELS_DIR, ENG_TOKENIZER), 'rb') as handle:
-        print("Loading eng tokenizer...", end=" ")
-        eng_tokenizer = pickle.load(handle)
+    if not os.path.exists(os.path.join(MODELS_DIR, ENG_TOKENIZER)):
+        print("English tokenizer not found.")
+        sentences = [elem for key, elem in tatoeba.read_sentences(ENG_SENT).items()]
+        eng_tokenizer = Tokenizer()
+        print("Building the tokenizer...", end=" ")
+        eng_tokenizer.fit_on_texts(sentences)
+        sentences = None
         print("Done.")
+        with open(os.path.join(MODELS_DIR, ENG_TOKENIZER), 'wb') as handle:
+            pickle.dump(eng_tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            print("Tokenizer saved to " + os.path.join(MODELS_DIR, ENG_TOKENIZER))
+    else:
+        with open(os.path.join(MODELS_DIR, ENG_TOKENIZER), 'rb') as handle:
+            print("Loading eng tokenizer...", end=" ")
+            eng_tokenizer = pickle.load(handle)
+            print("Done.")
 
-    with open(os.path.join(MODELS_DIR, JPN_TOKENIZER), 'rb') as handle:
-        print("Loading jpn tokenizer...", end=" ")
-        jpn_tokenizer = pickle.load(handle)
+    if not os.path.exists(os.path.join(MODELS_DIR, JPN_TOKENIZER)):
+        print("Japanese tokenizer not found.")
+        sentences = [elem for key, elem in tatoeba.read_sentences(JPN_SENT).items()]
+        jpn_tokenizer = JapaneseTokenizer()
+        print("Building the tokenizer...", end=" ")
+        jpn_tokenizer.fit_on_texts(sentences)
+        sentences = None
         print("Done.")
+        with open(os.path.join(MODELS_DIR, JPN_TOKENIZER), 'wb') as handle:
+            pickle.dump(jpn_tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            print("Tokenizer saved to " + os.path.join(MODELS_DIR, JPN_TOKENIZER))
+    else:
+        with open(os.path.join(MODELS_DIR, JPN_TOKENIZER), 'rb') as handle:
+            print("Loading jpn tokenizer...", end=" ")
+            jpn_tokenizer = pickle.load(handle)
+            print("Done.")
 
     eng_word_index = eng_tokenizer.word_index
     jpn_word_index = jpn_tokenizer.word_index
