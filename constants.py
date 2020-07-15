@@ -1,5 +1,6 @@
 # DIRECTORIES
 MODELS_DIR = 'models'
+SOM_DIR = 'som'
 ENG_TOKENIZER = 'eng_tokenizer.pickle'
 JPN_TOKENIZER = 'jpn_tokenizer.pickle'
 TATOEBA_PATH = 'tatoeba'
@@ -12,7 +13,9 @@ ITA_SENT = 'ita_sentences.tsv'
 JPN_SENT = 'jpn_sentences.tsv'
 ENG_TAGS = 'eng_tags.tsv'
 BEST_TAGS = 'best_tags.txt'
-TAGGED_SENT = 'tagged_sentences_translated.tsv'
+TAGGED_SENT = 'tagged_sentences.tsv'
+SOM = 'som.pickle'
+WINMAP = 'winmap.pickle'
 
 # VALUES
 EMBEDDING_DIM = 300

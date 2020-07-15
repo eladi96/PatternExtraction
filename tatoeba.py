@@ -26,9 +26,9 @@ def generate_dataset():
         with open(os.path.join(TATOEBA_PATH, TAGGED_SENT), mode='r') as tsv:
             reader = csv.reader(tsv, delimiter='\t')
             samples = [line for line in reader if line[0] == tag]
-            random.shuffle(samples)
-            train_dim = (len(samples) / 100) * 80
-            val_dim = (len(samples) / 100) * 10
+            # random.shuffle(samples)
+            train_dim = 100
+            val_dim = 20
             for count, sample in enumerate(samples):
                 if count < train_dim:
                     train.append(sample)
@@ -37,9 +37,9 @@ def generate_dataset():
                 if count >= train_dim + val_dim:
                     test.append(sample)
 
-    random.shuffle(train)
-    random.shuffle(valid)
-    random.shuffle(test)
+    # random.shuffle(train)
+    # random.shuffle(valid)
+    # random.shuffle(test)
     return train, valid, test
 
 
@@ -63,9 +63,8 @@ def tagged_sentences(destination):
         count = 1
         with open(os.path.join(TATOEBA_PATH, ENG_TAGS)) as tsv:
             reader = csv.reader(tsv, delimiter='\t')
-            gen = (row for row in reader if count <= 200)
+            gen = (row for row in reader if count <= 140)
             for row in gen:
-                print("\r" + str(tag) + " " + str(count), end="")
                 eng_sent = eng_sentences.get(row[0], None)
                 jpn_id = links.get(row[0], None)
                 jpn_sent = jpn_sentences.get(jpn_id, None)
@@ -96,8 +95,8 @@ def sentences_tags(sent_file):
 def coupled_links(lang1_file, lang2_file):
     """
     Script used to save in a file the links between sentences in two languages
-    :param: path_lang1: the path to the file containing the first language sentences
-    :param: path_lang2 the path to the file containing the second language sentences
+    :param: path_lang1: the file containing the first language sentences
+    :param: path_lang2 the file containing the second language sentences
     """
 
     lang1_sents = read_sentences(lang1_file)
@@ -136,6 +135,3 @@ def read_sentences(filename):
         print("Read sentences.")
 
     return sentences
-
-
-# if __name__ == '__main__':

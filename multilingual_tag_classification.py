@@ -1,39 +1,46 @@
-import keras
-from keras.layers import Embedding, GRU, Input, Dense, Concatenate, Dropout
-from keras.models import Model
-from keras.preprocessing.sequence import pad_sequences
-from keras.callbacks import EarlyStopping, ModelCheckpoint
-import numpy as np
-from keras_preprocessing.text import Tokenizer
-
 import tatoeba
+import os
 import os.path as path
 import fasttext
 import pickle
-import os
+import numpy as np
+import keras
+from tensorflow.keras import layers
+from tensorflow.keras.models import Model, load_model
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.metrics import Recall, Precision
+from keras.preprocessing.sequence import pad_sequences
+from keras_preprocessing.text import Tokenizer
+from tabulate import tabulate
 from constants import *
 from japanese_tokenizer import JapaneseTokenizer
 from models.utils import plot_history
 
 
-def use_model(model, outstream, x, y, v_x, v_y, t_x, test_y):
-    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-    model.summary()
-    keras.utils.plot_model(model, os.path.join(MODELS_DIR, str(model.name + "_graph.png")), show_shapes=True)
-    callbacks = [EarlyStopping(monitor='val_loss', patience=15),
-                 ModelCheckpoint(os.path.join(MODELS_DIR, str(model.name + ".h5")), save_best_only=True,
-                                 save_weights_only=False)]
-    history = model.fit(x, y, epochs=100, callbacks=callbacks,
-                        validation_data=(v_x, v_y))
-    plot_history(history, os.path.join(MODELS_DIR, str(model.name + "_history.png")))
+def evaluate_model(model_name, outstream, x, y, v_x, v_y, t_x, t_y):
+    model = load_model(path.join(MODELS_DIR, model_name), custom_objects={'Recall': Recall, 'Precision': Precision})
     model.summary(print_fn=lambda var: outstream.write(var + '\n'))
-    _, accuracy = model.evaluate(x, y, verbose=False)
-    outstream.write("Training Accuracy:  {:.4f}\n".format(accuracy))
-    _, accuracy = model.evaluate(v_x, v_y, verbose=False)
-    outstream.write("Validation Accuracy:  {:.4f}\n".format(accuracy))
-    _, accuracy = model.evaluate(t_x, test_y, verbose=False)
-    outstream.write("Testing Accuracy:  {:.4f}\n".format(accuracy))
-    outstream.write("#============================================================================================\n\n")
+    _, accuracy, recall, precision = model.evaluate(x, y, verbose=False)
+    _, v_accuracy, v_recall, v_precision = model.evaluate(v_x, v_y, verbose=False)
+    _, t_accuracy, t_recall, t_precision = model.evaluate(t_x, t_y, verbose=False)
+    outstream.write(tabulate([['Training', accuracy, recall, precision],
+                              ['Validation', v_accuracy, v_recall, v_precision],
+                              ['Testing', t_accuracy, t_recall, t_precision]],
+                             headers=['Set', 'Accuracy', 'Recall', 'Precision']))
+    outstream.write("\n=========================================================================================\n\n")
+
+
+def train_model(model, x, y, v_x, v_y):
+    model.compile(optimizer='adam', loss='categorical_crossentropy',
+                  metrics=['accuracy', Recall(name='recall'), Precision(name='precision')])
+    model.summary()
+    model_name = str(model.name)
+    keras.utils.plot_model(model, os.path.join(MODELS_DIR, model_name + "_graph.png"), show_shapes=True)
+    history = model.fit(x, y, epochs=100,
+                        callbacks=[EarlyStopping(monitor='val_loss', patience=15)],
+                        validation_data=(v_x, v_y), verbose=2)
+    model.save(path.join(MODELS_DIR, model_name))
+    plot_history(history, os.path.join(MODELS_DIR, model_name + "_history.png"))
 
 
 def main():
@@ -46,7 +53,7 @@ def main():
         eng_tokenizer = Tokenizer()
         print("Building the tokenizer...", end=" ")
         eng_tokenizer.fit_on_texts(sentences)
-        sentences = None
+        del sentences
         print("Done.")
         with open(os.path.join(MODELS_DIR, ENG_TOKENIZER), 'wb') as handle:
             pickle.dump(eng_tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -63,7 +70,7 @@ def main():
         jpn_tokenizer = JapaneseTokenizer()
         print("Building the tokenizer...", end=" ")
         jpn_tokenizer.fit_on_texts(sentences)
-        sentences = None
+        del sentences
         print("Done.")
         with open(os.path.join(MODELS_DIR, JPN_TOKENIZER), 'wb') as handle:
             pickle.dump(jpn_tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -141,7 +148,8 @@ def main():
     # PREPARING THE LABELS
 
     print("One-hot encoding the labels...", end=" ")
-    labels = list(set([sample[0] for sample in train]))
+    with open(os.path.join(TATOEBA_PATH, BEST_TAGS), mode='r') as file:
+        labels = [line.split(':')[0] for line in file]
 
     # Empty arrays to hold labels as one hot encodings
     train_y = np.zeros((len(train), NUM_LABELS), dtype=np.int8)
@@ -162,60 +170,70 @@ def main():
     # from being updated during training.
 
     # ENGLISH INPUT - EMBEDDING
-    eng_input = Input(shape=(ENG_SEQ_LEN,), dtype='int32', name='eng_input')
-    eng_embedding_layer = Embedding(len(eng_word_index) + 1,
-                                    EMBEDDING_DIM,
-                                    weights=[eng_embedding_matrix],
-                                    input_length=ENG_SEQ_LEN,
-                                    trainable=False,
-                                    name='eng_embedding')
+    eng_input = layers.Input(shape=(ENG_SEQ_LEN,), dtype='int32', name='eng_input')
+    eng_embedding_layer = layers.Embedding(len(eng_word_index) + 1,
+                                           EMBEDDING_DIM,
+                                           weights=[eng_embedding_matrix],
+                                           input_length=ENG_SEQ_LEN,
+                                           trainable=False,
+                                           name='eng_embedding')
     eng_mask = eng_embedding_layer.compute_mask(eng_input)
+    eng_embeddings = eng_embedding_layer(eng_input)
+    eng_recurrent = layers.GRU(EMBEDDING_DIM, name='eng_recurrent')(eng_embeddings, mask=eng_mask)
 
     # JAPANESE INPUT - EMBEDDING
-    jpn_input = Input(shape=(JPN_SEQ_LEN,), dtype='int32', name='jpn_input')
-    jpn_embedding_layer = Embedding(len(jpn_word_index) + 1,
-                                    EMBEDDING_DIM,
-                                    weights=[jpn_embedding_matrix],
-                                    input_length=JPN_SEQ_LEN,
-                                    trainable=False,
-                                    name='jpn_embedding')
+    jpn_input = layers.Input(shape=(JPN_SEQ_LEN,), dtype='int32', name='jpn_input')
+    jpn_embedding_layer = layers.Embedding(len(jpn_word_index) + 1,
+                                           EMBEDDING_DIM,
+                                           weights=[jpn_embedding_matrix],
+                                           input_length=JPN_SEQ_LEN,
+                                           trainable=False,
+                                           name='jpn_embedding')
     jpn_mask = jpn_embedding_layer.compute_mask(jpn_input)
+    jpn_embeddings = jpn_embedding_layer(jpn_input)
+    jpn_recurrent = layers.GRU(EMBEDDING_DIM, name='jpn_recurrent')(jpn_embeddings, mask=jpn_mask)
 
-    with open(path.join(MODELS_DIR, 'summary.txt'), mode='w') as file:
+    # BASELINE MODEL
+    x = eng_embedding_layer(eng_input)
+    x = layers.Lambda(lambda t: keras.backend.mean(t, axis=1), output_shape=(EMBEDDING_DIM,), name='mean')(x)
+    x = layers.Dropout(0.5, name='dropout')(x)
+    output = layers.Dense(NUM_LABELS, activation='softmax', name='classification')(x)
+    eng_baseline_model = Model(eng_input, output, name='eng_baseline')
+    train_model(eng_baseline_model, train_x_eng, train_y, valid_x_eng, valid_y)
+    del eng_baseline_model
 
-        # ENGLISH MODEL
-        eng_embeddings = eng_embedding_layer(eng_input)
-        eng_recurrent = GRU(EMBEDDING_DIM, name='eng_recurrent')(eng_embeddings, mask=eng_mask)
-        eng_dropout = Dropout(0.5, name='dropout')(eng_recurrent)
-        eng_output = Dense(NUM_LABELS, activation='softmax', name='classification')(eng_dropout)
-        eng_model = Model(eng_input, eng_output, name='eng_model')
-        use_model(eng_model, file, train_x_eng, train_y, valid_x_eng, valid_y, test_x_eng, test_y)
+    # ENGLISH MODEL
+    eng_dropout = layers.Dropout(0.5, name='eng_dropout')(eng_recurrent)
+    eng_output = layers.Dense(NUM_LABELS, activation='softmax', name='eng_classification')(eng_dropout)
+    eng_model = Model(eng_input, output, name='eng_model')
+    train_model(eng_model, train_x_eng, train_y, valid_x_eng, valid_y)
+    del eng_model
 
-        # JAPANESE MODEL
-        jpn_embeddings = jpn_embedding_layer(jpn_input)
-        jpn_recurrent = GRU(EMBEDDING_DIM, name='jpn_recurrent')(jpn_embeddings, mask=jpn_mask)
-        jpn_dropout = Dropout(0.5, name='dropout')(jpn_recurrent)
-        jpn_output = Dense(NUM_LABELS, activation='softmax', name='classification')(jpn_dropout)
-        jpn_model = Model(jpn_input, jpn_output, name='jpn_model')
-        use_model(jpn_model, file, train_x_jpn, train_y, valid_x_jpn, valid_y, test_x_jpn, test_y)
+    # JAPANESE MODEL
+    jpn_dropout = layers.Dropout(0.5, name='jpn_dropout')(jpn_recurrent)
+    jpn_output = layers.Dense(NUM_LABELS, activation='softmax', name='jpn_classification')(jpn_dropout)
+    jpn_model = Model(jpn_input, output, name='jpn_model')
+    train_model(jpn_model, train_x_jpn, train_y, valid_x_jpn, valid_y)
+    del jpn_model
 
-        # COMBINED MODEL
-        merged = Concatenate(name='merging_layer')([eng_recurrent, jpn_recurrent])
-        combined_dropout = Dropout(0.5, name='dropout')(merged)
-        combined_output = Dense(NUM_LABELS, activation='softmax', name='classification')(combined_dropout)
-        # combined_model = Model([eng_input, jpn_input], combined_output, name='combined_model')
-        # use_model(combined_model, file, [train_x_eng, train_x_jpn], train_y, [valid_x_eng, valid_x_jpn], valid_y,
-        #           [test_x_eng, test_x_jpn], test_y)
+    # COMBINED MODEL
+    merge_output = layers.Average(name='merge')([eng_output, jpn_output])
+    combined = Model([eng_input, jpn_input], merge_output, name='combined_model')
+    train_model(combined, [train_x_eng, train_x_jpn], train_y, [valid_x_eng, valid_x_jpn], valid_y)
+    del combined
+    os.system('spd-say "Modello combinato completato"')
 
-        # PRETRAINED MODEL
-        pretrained = Model([eng_input, jpn_input], combined_output, name='pretrained_model')
-        pretrained.get_layer('eng_recurrent').set_weights(eng_model.get_layer('eng_recurrent').get_weights())
-        pretrained.get_layer('eng_recurrent').trainable = False
-        pretrained.get_layer('jpn_recurrent').set_weights(jpn_model.get_layer('jpn_recurrent').get_weights())
-        pretrained.get_layer('jpn_recurrent').trainable = False
-        use_model(pretrained, file, [train_x_eng, train_x_jpn], train_y, [valid_x_eng, valid_x_jpn], valid_y,
-                  [test_x_eng, test_x_jpn], test_y)
+    with open(path.join(MODELS_DIR, 'summary.txt'), mode='a') as file:
+        file.write(
+            "\nTODO==============================================================================================" +
+            "======================\n")
+        evaluate_model('eng_baseline', file, train_x_eng, train_y, valid_x_eng, valid_y, test_x_eng, test_y)
+        evaluate_model('eng_model', file, train_x_eng, train_y, valid_x_eng, valid_y, test_x_eng, test_y)
+        evaluate_model('jpn_model', file, train_x_jpn, train_y, valid_x_jpn, valid_y, test_x_jpn, test_y)
+        evaluate_model('combined_model', file, [train_x_eng, train_x_jpn], train_y, [valid_x_eng, valid_x_jpn], valid_y,
+                       [test_x_eng, test_x_jpn], test_y)
 
 
 if __name__ == '__main__':
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
     main()

@@ -23,13 +23,8 @@ obligation: 327
 likes: 312
 necessity: 310
 exclamative: 303
-age: 256
-mathematics: 254
 ignorance: 249
 purpose: 249
 permission: 244
-gambling: 230
 reason: 229
-restaurant: 218
 possibility: 214 #sentences that express the possibility of something to happen
-courtroom: 212 #sentences you'll likely to hear in courtroom
