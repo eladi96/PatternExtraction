@@ -194,25 +194,26 @@ def main():
     jpn_recurrent = layers.GRU(EMBEDDING_DIM, name='jpn_recurrent')(jpn_embeddings, mask=jpn_mask)
 
     # BASELINE MODEL
-    x = eng_embedding_layer(eng_input)
-    x = layers.Lambda(lambda t: keras.backend.mean(t, axis=1), output_shape=(EMBEDDING_DIM,), name='mean')(x)
-    x = layers.Dropout(0.5, name='dropout')(x)
-    output = layers.Dense(NUM_LABELS, activation='softmax', name='classification')(x)
-    eng_baseline_model = Model(eng_input, output, name='eng_baseline')
+    baseline_embedding = eng_embedding_layer(eng_input)
+    baseline_mean = layers.Lambda(lambda t: keras.backend.mean(t, axis=1),
+                                  output_shape=(EMBEDDING_DIM,), name='mean')(baseline_embedding)
+    baseline_dropout = layers.Dropout(0.5, name='dropout')(baseline_mean)
+    baseline_output = layers.Dense(NUM_LABELS, activation='softmax', name='classification')(baseline_dropout)
+    eng_baseline_model = Model(eng_input, baseline_output, name='eng_baseline')
     train_model(eng_baseline_model, train_x_eng, train_y, valid_x_eng, valid_y)
     del eng_baseline_model
 
     # ENGLISH MODEL
     eng_dropout = layers.Dropout(0.5, name='eng_dropout')(eng_recurrent)
     eng_output = layers.Dense(NUM_LABELS, activation='softmax', name='eng_classification')(eng_dropout)
-    eng_model = Model(eng_input, output, name='eng_model')
+    eng_model = Model(eng_input, eng_output, name='eng_model')
     train_model(eng_model, train_x_eng, train_y, valid_x_eng, valid_y)
     del eng_model
 
     # JAPANESE MODEL
     jpn_dropout = layers.Dropout(0.5, name='jpn_dropout')(jpn_recurrent)
     jpn_output = layers.Dense(NUM_LABELS, activation='softmax', name='jpn_classification')(jpn_dropout)
-    jpn_model = Model(jpn_input, output, name='jpn_model')
+    jpn_model = Model(jpn_input, jpn_output, name='jpn_model')
     train_model(jpn_model, train_x_jpn, train_y, valid_x_jpn, valid_y)
     del jpn_model
 
