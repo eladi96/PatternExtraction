@@ -1,13 +1,13 @@
 import tatoeba
 import os
-import os.path as path
 import fasttext
 import pickle
 import numpy as np
 import keras
+from os.path import join
 from tensorflow.keras import layers
 from tensorflow.keras.models import Model, load_model
-from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from tensorflow.keras.metrics import Recall, Precision
 from keras.preprocessing.sequence import pad_sequences
 from keras_preprocessing.text import Tokenizer
@@ -18,16 +18,18 @@ from models.utils import plot_history
 
 
 def evaluate_model(model_name, outstream, x, y, v_x, v_y, t_x, t_y):
-    model = load_model(path.join(MODELS_DIR, model_name), custom_objects={'Recall': Recall, 'Precision': Precision})
-    model.summary(print_fn=lambda var: outstream.write(var + '\n'))
-    _, accuracy, recall, precision = model.evaluate(x, y, verbose=False)
-    _, v_accuracy, v_recall, v_precision = model.evaluate(v_x, v_y, verbose=False)
-    _, t_accuracy, t_recall, t_precision = model.evaluate(t_x, t_y, verbose=False)
-    outstream.write(tabulate([['Training', accuracy, recall, precision],
-                              ['Validation', v_accuracy, v_recall, v_precision],
-                              ['Testing', t_accuracy, t_recall, t_precision]],
-                             headers=['Set', 'Accuracy', 'Recall', 'Precision']))
-    outstream.write("\n=========================================================================================\n\n")
+    model = load_model(join(MODELS_DIR, model_name + '.h5'), custom_objects={'Recall': Recall, 'Precision': Precision})
+    # model.summary(print_fn=lambda var: outstream.write(var + '\n'))
+    loss, accuracy, recall, precision = model.evaluate(x, y, verbose=False)
+    v_loss, v_accuracy, v_recall, v_precision = model.evaluate(v_x, v_y, verbose=False)
+    t_loss, t_accuracy, t_recall, t_precision = model.evaluate(t_x, t_y, verbose=False)
+    outstream.write("Model: " + model_name + "\n")
+    outstream.write("______________________________________________________\n")
+    outstream.write(tabulate([['Training', loss, accuracy, recall, precision],
+                              ['Validation', v_loss, v_accuracy, v_recall, v_precision],
+                              ['Testing', t_loss, t_accuracy, t_recall, t_precision]],
+                             headers=['Set', 'Loss', 'Accuracy', 'Recall', 'Precision']))
+    outstream.write("\n======================================================\n\n")
 
 
 def train_model(model, x, y, v_x, v_y):
@@ -35,12 +37,14 @@ def train_model(model, x, y, v_x, v_y):
                   metrics=['accuracy', Recall(name='recall'), Precision(name='precision')])
     model.summary()
     model_name = str(model.name)
-    keras.utils.plot_model(model, os.path.join(MODELS_DIR, model_name + "_graph.png"), show_shapes=True)
     history = model.fit(x, y, epochs=100,
-                        callbacks=[EarlyStopping(monitor='val_loss', patience=15)],
-                        validation_data=(v_x, v_y), verbose=2)
-    model.save(path.join(MODELS_DIR, model_name))
-    plot_history(history, os.path.join(MODELS_DIR, model_name + "_history.png"))
+                        callbacks=[
+                            EarlyStopping(monitor='val_loss', patience=15),
+                            ModelCheckpoint(join(MODELS_DIR, model_name + '.h5'),
+                                            monitor='val_loss', save_best_only=True)],
+                        validation_data=(v_x, v_y), verbose=1)
+    keras.utils.plot_model(model, join(MODELS_DIR, "graph", model_name + "_graph.png"), show_shapes=True)
+    plot_history(history, join(MODELS_DIR, "history", model_name + "_history.png"))
 
 
 def main():
@@ -179,7 +183,7 @@ def main():
                                            name='eng_embedding')
     eng_mask = eng_embedding_layer.compute_mask(eng_input)
     eng_embeddings = eng_embedding_layer(eng_input)
-    eng_recurrent = layers.GRU(EMBEDDING_DIM, name='eng_recurrent')(eng_embeddings, mask=eng_mask)
+    eng_recurrent = layers.LSTM(EMBEDDING_DIM, name='eng_recurrent')(eng_embeddings, mask=eng_mask)
 
     # JAPANESE INPUT - EMBEDDING
     jpn_input = layers.Input(shape=(JPN_SEQ_LEN,), dtype='int32', name='jpn_input')
@@ -191,7 +195,7 @@ def main():
                                            name='jpn_embedding')
     jpn_mask = jpn_embedding_layer.compute_mask(jpn_input)
     jpn_embeddings = jpn_embedding_layer(jpn_input)
-    jpn_recurrent = layers.GRU(EMBEDDING_DIM, name='jpn_recurrent')(jpn_embeddings, mask=jpn_mask)
+    jpn_recurrent = layers.LSTM(EMBEDDING_DIM, name='jpn_recurrent')(jpn_embeddings, mask=jpn_mask)
 
     # BASELINE MODEL
     baseline_embedding = eng_embedding_layer(eng_input)
@@ -204,27 +208,29 @@ def main():
     del eng_baseline_model
 
     # ENGLISH MODEL
-    eng_dropout = layers.Dropout(0.5, name='eng_dropout')(eng_recurrent)
-    eng_output = layers.Dense(NUM_LABELS, activation='softmax', name='eng_classification')(eng_dropout)
+    eng_dropout = layers.Dropout(0.5, name='dropout')(eng_recurrent)
+    eng_output = layers.Dense(NUM_LABELS, activation='softmax', name='classification')(eng_dropout)
     eng_model = Model(eng_input, eng_output, name='eng_model')
     train_model(eng_model, train_x_eng, train_y, valid_x_eng, valid_y)
     del eng_model
 
     # JAPANESE MODEL
-    jpn_dropout = layers.Dropout(0.5, name='jpn_dropout')(jpn_recurrent)
-    jpn_output = layers.Dense(NUM_LABELS, activation='softmax', name='jpn_classification')(jpn_dropout)
+    jpn_dropout = layers.Dropout(0.5, name='dropout')(jpn_recurrent)
+    jpn_output = layers.Dense(NUM_LABELS, activation='softmax', name='classification')(jpn_dropout)
     jpn_model = Model(jpn_input, jpn_output, name='jpn_model')
     train_model(jpn_model, train_x_jpn, train_y, valid_x_jpn, valid_y)
     del jpn_model
 
     # COMBINED MODEL
-    merge_output = layers.Average(name='merge')([eng_output, jpn_output])
-    combined = Model([eng_input, jpn_input], merge_output, name='combined_model')
-    train_model(combined, [train_x_eng, train_x_jpn], train_y, [valid_x_eng, valid_x_jpn], valid_y)
-    del combined
-    os.system('spd-say "Modello combinato completato"')
+    comb_merge = layers.Concatenate(name='merge')([eng_recurrent, jpn_recurrent])
+    comb_merge = layers.Dense(EMBEDDING_DIM, activation='relu', name='reduce')(comb_merge)
+    comb_dropout = layers.Dropout(0.5, name='dropout')(comb_merge)
+    comb_output = layers.Dense(NUM_LABELS, activation='softmax', name='classification')(comb_dropout)
+    comb_model = Model([eng_input, jpn_input], comb_output, name='combined_model')
+    train_model(comb_model, [train_x_eng, train_x_jpn], train_y, [valid_x_eng, valid_x_jpn], valid_y)
+    del comb_model
 
-    with open(path.join(MODELS_DIR, 'summary.txt'), mode='a') as file:
+    with open(join(MODELS_DIR, 'summary.txt'), mode='a') as file:
         file.write(
             "\nTODO==============================================================================================" +
             "======================\n")
@@ -237,4 +243,3 @@ def main():
 
 if __name__ == '__main__':
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-    main()
