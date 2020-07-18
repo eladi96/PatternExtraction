@@ -17,6 +17,24 @@ from japanese_tokenizer import JapaneseTokenizer
 from models.utils import plot_history
 
 
+def avg_results(filename):
+    values = {"Training": {"Loss": list(), "Accuracy": list(), "Recall": list(), "Precision": list()},
+              "Validation": {"Loss": list(), "Accuracy": list(), "Recall": list(), "Precision": list()},
+              "Testing": {"Loss": list(), "Accuracy": list(), "Recall": list(), "Precision": list()}}
+    with open(filename, mode='r') as file:
+        for row in file:
+            row = row.split()
+            if len(row) < 5:
+                continue
+            if row[0] == "Training" or row[0] == "Validation" or row[0] == "Testing":
+                values[row[0]]["Loss"].append(float(row[1].strip()))
+                values[row[0]]["Accuracy"].append(float(row[2].strip()))
+                values[row[0]]["Recall"].append(float(row[3].strip()))
+                values[row[0]]["Precision"].append(float(row[4].strip()))
+
+    return values
+
+
 def evaluate_model(model_name, outstream, x, y, v_x, v_y, t_x, t_y):
     model = load_model(join(MODELS_DIR, model_name + '.h5'), custom_objects={'Recall': Recall, 'Precision': Precision})
     # model.summary(print_fn=lambda var: outstream.write(var + '\n'))
@@ -230,7 +248,7 @@ def main():
     train_model(comb_model, [train_x_eng, train_x_jpn], train_y, [valid_x_eng, valid_x_jpn], valid_y)
     del comb_model
 
-    with open(join(MODELS_DIR, 'summary.txt'), mode='a') as file:
+    with open(join(MODELS_DIR, 'baseline_summary.txt'), mode='a') as file:
         file.write(
             "\nTODO==============================================================================================" +
             "======================\n")

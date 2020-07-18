@@ -26,9 +26,9 @@ def generate_dataset():
         with open(os.path.join(TATOEBA_PATH, TAGGED_SENT), mode='r') as tsv:
             reader = csv.reader(tsv, delimiter='\t')
             samples = [line for line in reader if line[0] == tag]
-            # random.shuffle(samples)
-            train_dim = 100
-            val_dim = 20
+            random.shuffle(samples)
+            train_dim = (len(samples) / 100) * 80
+            val_dim = (len(samples) / 100) * 10
             for count, sample in enumerate(samples):
                 if count < train_dim:
                     train.append(sample)
@@ -37,9 +37,9 @@ def generate_dataset():
                 if count >= train_dim + val_dim:
                     test.append(sample)
 
-    # random.shuffle(train)
-    # random.shuffle(valid)
-    # random.shuffle(test)
+    random.shuffle(train)
+    random.shuffle(valid)
+    random.shuffle(test)
     return train, valid, test
 
 
@@ -63,7 +63,7 @@ def tagged_sentences(destination):
         count = 1
         with open(os.path.join(TATOEBA_PATH, ENG_TAGS)) as tsv:
             reader = csv.reader(tsv, delimiter='\t')
-            gen = (row for row in reader if count <= 140)
+            gen = (row for row in reader if count <= 500)
             for row in gen:
                 eng_sent = eng_sentences.get(row[0], None)
                 jpn_id = links.get(row[0], None)
@@ -135,3 +135,21 @@ def read_sentences(filename):
         print("Read sentences.")
 
     return sentences
+
+
+if __name__ == '__main__':
+
+    # tagged_sentences('500_tagged_sentences.tsv')
+
+    tags = dict()
+    with open(os.path.join(TATOEBA_PATH, '500_tagged_sentences.tsv'), mode='r') as tsv:
+        reader = csv.reader(tsv, delimiter='\t')
+        for row in reader:
+            if tags.get(row[0], None) is not None:
+                tags[row[0]] += 1
+            else:
+                tags[row[0]] = 1
+
+    tags = {k: v for k, v in sorted(tags.items(), key=lambda item: item[1])}
+    for key, value in tags.items():
+        print(key, value)

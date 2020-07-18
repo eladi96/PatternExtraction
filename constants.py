@@ -13,7 +13,7 @@ ITA_SENT = 'ita_sentences.tsv'
 JPN_SENT = 'jpn_sentences.tsv'
 ENG_TAGS = 'eng_tags.tsv'
 BEST_TAGS = 'best_tags.txt'
-TAGGED_SENT = 'tagged_sentences.tsv'
+TAGGED_SENT = '500_tagged_sentences.tsv'
 SOM = 'som.pickle'
 WINMAP = 'winmap.pickle'
 
