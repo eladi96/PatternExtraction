@@ -15,6 +15,105 @@ from tabulate import tabulate
 from constants import *
 from japanese_tokenizer import JapaneseTokenizer
 from models.utils import plot_history
+from pylatex import Document, Section, Command, Figure, Tabular
+from pylatex.utils import NoEscape
+
+
+def latex_summary():
+    doc = Document()
+
+    doc.preamble.append(Command('title', 'Models comparison'))
+    doc.preamble.append(Command('author', 'Enrico Ladisa'))
+    doc.preamble.append(Command('date', NoEscape(r'\today')))
+    doc.append(NoEscape(r'\maketitle'))
+
+    with doc.create(Section('Baseline Model')):
+        doc.append('Model used as baseline. The model takes in input the embeddings of the words of the sentence and '
+                   'computes the average.')
+        with doc.create(Figure(position='h!')) as graph:
+            graph.add_image(join('graph', 'baseline_model_graph.png'), width='200px')
+            graph.add_caption('Baseline model architecture.')
+        values = avg_results(join(MODELS_DIR, 'summary', 'baseline_model_summary.txt'))
+        doc.append(Command('begin', 'center'))
+        with doc.create(Tabular('l||r r r r', pos='centered')) as table:
+            table.add_row(("Set", "Loss", "Accuracy", "Recall", "Precision"))
+            table.add_hline()
+            table.add_hline()
+            table.add_row(("Training", values["Training"]["Loss"], values["Training"]["Accuracy"],
+                           values["Training"]["Recall"], values["Training"]["Precision"]))
+            table.add_row(("Validation", values["Validation"]["Loss"], values["Validation"]["Accuracy"],
+                           values["Validation"]["Recall"], values["Validation"]["Precision"]))
+            table.add_row(("Testing", values["Testing"]["Loss"], values["Testing"]["Accuracy"],
+                           values["Testing"]["Recall"], values["Testing"]["Precision"]))
+        doc.append(Command('end', 'center'))
+
+    doc.append(Command('newpage'))
+
+    with doc.create(Section('English Recurrent Model')):
+        doc.append('This model applies a recurrent layer of GRU cells to the list of the embeddings of the sentence.')
+        with doc.create(Figure(position='h!')) as graph:
+            graph.add_image(join('graph', 'eng_model_graph.png'), width='200px')
+            graph.add_caption('English model architecture.')
+        values = avg_results(join(MODELS_DIR, 'summary', 'eng_model_summary.txt'))
+        doc.append(Command('begin', 'center'))
+        with doc.create(Tabular('l||r r r r', pos='centered')) as table:
+            table.add_row(("Set", "Loss", "Accuracy", "Recall", "Precision"))
+            table.add_hline()
+            table.add_hline()
+            table.add_row(("Training", values["Training"]["Loss"], values["Training"]["Accuracy"],
+                           values["Training"]["Recall"], values["Training"]["Precision"]))
+            table.add_row(("Validation", values["Validation"]["Loss"], values["Validation"]["Accuracy"],
+                           values["Validation"]["Recall"], values["Validation"]["Precision"]))
+            table.add_row(("Testing", values["Testing"]["Loss"], values["Testing"]["Accuracy"],
+                           values["Testing"]["Recall"], values["Testing"]["Precision"]))
+        doc.append(Command('end', 'center'))
+
+    doc.append(Command('newpage'))
+
+    with doc.create(Section('Japanese Recurrent Model')):
+        doc.append('This time we apply the same recurrent architecture to the japanese translation of the sentences.')
+        with doc.create(Figure(position='h!')) as graph:
+            graph.add_image(join('graph', 'jpn_model_graph.png'), width='200px')
+            graph.add_caption('Japanese model architecture.')
+        values = avg_results(join(MODELS_DIR, 'summary', 'jpn_model_summary.txt'))
+        doc.append(Command('begin', 'center'))
+        with doc.create(Tabular('l||r r r r', pos='centered')) as table:
+            table.add_row(("Set", "Loss", "Accuracy", "Recall", "Precision"))
+            table.add_hline()
+            table.add_hline()
+            table.add_row(("Training", values["Training"]["Loss"], values["Training"]["Accuracy"],
+                           values["Training"]["Recall"], values["Training"]["Precision"]))
+            table.add_row(("Validation", values["Validation"]["Loss"], values["Validation"]["Accuracy"],
+                           values["Validation"]["Recall"], values["Validation"]["Precision"]))
+            table.add_row(("Testing", values["Testing"]["Loss"], values["Testing"]["Accuracy"],
+                           values["Testing"]["Recall"], values["Testing"]["Precision"]))
+        doc.append(Command('end', 'center'))
+
+    doc.append(Command('newpage'))
+
+    with doc.create(Section('Combined Model')):
+        doc.append('This model combines the outputs of the reccurrent layers of the english and japanese model. '
+                   'The sentence embeddings are first concatenate, then the dimension of the result is '
+                   'reduced to 300 by a Dense layer. This is done so that the sentence embedding to classify has the '
+                   'same dimension of the ones produced by the single-language models.')
+        with doc.create(Figure(position='h!')) as graph:
+            graph.add_image(join('graph', 'combined_model_graph.png'), width='350px')
+            graph.add_caption('Combined model architecture.')
+        values = avg_results(join(MODELS_DIR, 'summary', 'combined_model_summary.txt'))
+        doc.append(Command('begin', 'center'))
+        with doc.create(Tabular('l||r r r r', pos='centered')) as table:
+            table.add_row(("Set", "Loss", "Accuracy", "Recall", "Precision"))
+            table.add_hline()
+            table.add_hline()
+            table.add_row(("Training", values["Training"]["Loss"], values["Training"]["Accuracy"],
+                           values["Training"]["Recall"], values["Training"]["Precision"]))
+            table.add_row(("Validation", values["Validation"]["Loss"], values["Validation"]["Accuracy"],
+                           values["Validation"]["Recall"], values["Validation"]["Precision"]))
+            table.add_row(("Testing", values["Testing"]["Loss"], values["Testing"]["Accuracy"],
+                           values["Testing"]["Recall"], values["Testing"]["Precision"]))
+        doc.append(Command('end', 'center'))
+
+    doc.generate_pdf(join(MODELS_DIR, 'models_comparison'), clean_tex=True)
 
 
 def avg_results(filename):
@@ -32,16 +131,18 @@ def avg_results(filename):
                 values[row[0]]["Recall"].append(float(row[3].strip()))
                 values[row[0]]["Precision"].append(float(row[4].strip()))
 
+    for collection, metrics in values.items():
+        for metric, measures in metrics.items():
+            values[collection][metric] = np.around(np.mean(measures), decimals=4)
+
     return values
 
 
 def evaluate_model(model_name, outstream, x, y, v_x, v_y, t_x, t_y):
     model = load_model(join(MODELS_DIR, model_name + '.h5'), custom_objects={'Recall': Recall, 'Precision': Precision})
-    # model.summary(print_fn=lambda var: outstream.write(var + '\n'))
     loss, accuracy, recall, precision = model.evaluate(x, y, verbose=False)
     v_loss, v_accuracy, v_recall, v_precision = model.evaluate(v_x, v_y, verbose=False)
     t_loss, t_accuracy, t_recall, t_precision = model.evaluate(t_x, t_y, verbose=False)
-    outstream.write("Model: " + model_name + "\n")
     outstream.write("______________________________________________________\n")
     outstream.write(tabulate([['Training', loss, accuracy, recall, precision],
                               ['Validation', v_loss, v_accuracy, v_recall, v_precision],
@@ -201,7 +302,7 @@ def main():
                                            name='eng_embedding')
     eng_mask = eng_embedding_layer.compute_mask(eng_input)
     eng_embeddings = eng_embedding_layer(eng_input)
-    eng_recurrent = layers.LSTM(EMBEDDING_DIM, name='eng_recurrent')(eng_embeddings, mask=eng_mask)
+    eng_recurrent = layers.GRU(EMBEDDING_DIM, name='eng_recurrent')(eng_embeddings, mask=eng_mask)
 
     # JAPANESE INPUT - EMBEDDING
     jpn_input = layers.Input(shape=(JPN_SEQ_LEN,), dtype='int32', name='jpn_input')
@@ -213,15 +314,15 @@ def main():
                                            name='jpn_embedding')
     jpn_mask = jpn_embedding_layer.compute_mask(jpn_input)
     jpn_embeddings = jpn_embedding_layer(jpn_input)
-    jpn_recurrent = layers.LSTM(EMBEDDING_DIM, name='jpn_recurrent')(jpn_embeddings, mask=jpn_mask)
+    jpn_recurrent = layers.GRU(EMBEDDING_DIM, name='jpn_recurrent')(jpn_embeddings, mask=jpn_mask)
 
     # BASELINE MODEL
     baseline_embedding = eng_embedding_layer(eng_input)
     baseline_mean = layers.Lambda(lambda t: keras.backend.mean(t, axis=1),
-                                  output_shape=(EMBEDDING_DIM,), name='mean')(baseline_embedding)
+                                  output_shape=(EMBEDDING_DIM,), name='average')(baseline_embedding)
     baseline_dropout = layers.Dropout(0.5, name='dropout')(baseline_mean)
     baseline_output = layers.Dense(NUM_LABELS, activation='softmax', name='classification')(baseline_dropout)
-    eng_baseline_model = Model(eng_input, baseline_output, name='eng_baseline')
+    eng_baseline_model = Model(eng_input, baseline_output, name='baseline_model')
     train_model(eng_baseline_model, train_x_eng, train_y, valid_x_eng, valid_y)
     del eng_baseline_model
 
@@ -245,19 +346,32 @@ def main():
     comb_dropout = layers.Dropout(0.5, name='dropout')(comb_merge)
     comb_output = layers.Dense(NUM_LABELS, activation='softmax', name='classification')(comb_dropout)
     comb_model = Model([eng_input, jpn_input], comb_output, name='combined_model')
+
+    eng_model = load_model(join(MODELS_DIR, 'eng_model.h5'), custom_objects={'Recall': Recall, 'Precision': Precision})
+    jpn_model = load_model(join(MODELS_DIR, 'jpn_model.h5'), custom_objects={'Recall': Recall, 'Precision': Precision})
+    comb_model.get_layer('eng_recurrent').set_weights(eng_model.get_layer('eng_recurrent').get_weights())
+    comb_model.get_layer('eng_recurrent').trainable = False
+    comb_model.get_layer('jpn_recurrent').set_weights(jpn_model.get_layer('jpn_recurrent').get_weights())
+    comb_model.get_layer('jpn_recurrent').trainable = False
+    del eng_model
+    del jpn_model
+
     train_model(comb_model, [train_x_eng, train_x_jpn], train_y, [valid_x_eng, valid_x_jpn], valid_y)
     del comb_model
 
-    with open(join(MODELS_DIR, 'baseline_summary.txt'), mode='a') as file:
-        file.write(
-            "\nTODO==============================================================================================" +
-            "======================\n")
-        evaluate_model('eng_baseline', file, train_x_eng, train_y, valid_x_eng, valid_y, test_x_eng, test_y)
+    with open(join(MODELS_DIR, 'summary', 'baseline_model_summary.txt'), mode='a') as file:
+        evaluate_model('baseline_model', file, train_x_eng, train_y, valid_x_eng, valid_y, test_x_eng, test_y)
+    with open(join(MODELS_DIR, 'summary', 'eng_model_summary.txt'), mode='a') as file:
         evaluate_model('eng_model', file, train_x_eng, train_y, valid_x_eng, valid_y, test_x_eng, test_y)
+    with open(join(MODELS_DIR, 'summary', 'jpn_model_summary.txt'), mode='a') as file:
         evaluate_model('jpn_model', file, train_x_jpn, train_y, valid_x_jpn, valid_y, test_x_jpn, test_y)
+    with open(join(MODELS_DIR, 'summary', 'combined_model_summary.txt'), mode='a') as file:
         evaluate_model('combined_model', file, [train_x_eng, train_x_jpn], train_y, [valid_x_eng, valid_x_jpn], valid_y,
                        [test_x_eng, test_x_jpn], test_y)
 
 
 if __name__ == '__main__':
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+    for i in range(5):
+        main()
+    latex_summary()
