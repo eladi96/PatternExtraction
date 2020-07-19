@@ -271,7 +271,7 @@ def main():
     # PREPARING THE LABELS
 
     print("One-hot encoding the labels...", end=" ")
-    with open(os.path.join(TATOEBA_PATH, BEST_TAGS), mode='r') as file:
+    with open(os.path.join(TATOEBA_DIR, BEST_TAGS), mode='r') as file:
         labels = [line.split(':')[0] for line in file]
 
     # Empty arrays to hold labels as one hot encodings
@@ -372,6 +372,6 @@ def main():
 
 if __name__ == '__main__':
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-    for i in range(5):
-        main()
-    latex_summary()
+    # for phase in range(5):
+    #     main()
+    # latex_summary()
