@@ -15,43 +15,36 @@ from sequence_similarity import trigram_similarity
 
 
 def load_data():
-    with open(join(SOM_DIR, SOM), 'rb') as handle:
+    with open(join(SOM_DIR, 'eng_som.pickle'), 'rb') as handle:
         net = pickle.load(handle)
 
-    with open(join(SOM_DIR, WINMAP), 'rb') as handle:
+    with open(join(SOM_DIR, 'eng_winmap.pickle'), 'rb') as handle:
         w = pickle.load(handle)
 
-    with open(join(SOM_DIR, 'sentences.pickle'), 'rb') as handle:
+    with open(join(SOM_DIR, 'eng_sentences.pickle'), 'rb') as handle:
         s = pickle.load(handle)
 
-    with open(join(SOM_DIR, 'embeddings.pickle'), 'rb') as handle:
+    with open(join(SOM_DIR, 'eng_embeddings.pickle'), 'rb') as handle:
         e = pickle.load(handle)
 
-    print("Multilingual model loaded.")
+    print("English model loaded.")
 
     return net, w, s, e
 
 
 def preprocessing():
-    model = load_model(join(MODELS_DIR, 'combined_model.h5'), custom_objects={'Recall': Recall, 'Precision': Precision})
-    embedder = keras.backend.function([model.layers[0].input, model.layers[1].input], model.layers[-3].output)
+    model = load_model(join(MODELS_DIR, 'eng_model.h5'), custom_objects={'Recall': Recall, 'Precision': Precision})
+    embedder = keras.backend.function(model.layers[0].input, model.layers[-3].output)
     MAX_SEQUENCE_ENG = model.layers[0].input_shape[0][1]
-    MAX_SEQUENCE_JPN = model.layers[1].input_shape[0][1]
 
     eng_sents = tatoeba.read_sentences(tatoeba.ENG_SENT)
-    jpn_sents = tatoeba.read_sentences(tatoeba.JPN_SENT)
 
     with open(join(MODELS_DIR, ENG_TOKENIZER), 'rb') as handle:
         print("Loading english tokenizer...", end=" ")
         eng_tokenizer = pickle.load(handle)
         print("Done.")
 
-    with open(join(MODELS_DIR, JPN_TOKENIZER), 'rb') as handle:
-        print("Loading japanese tokenizer...", end=" ")
-        jpn_tokenizer = pickle.load(handle)
-        print("Done.")
-
-    with open(join(SOM_DIR, 'embedded_sentences.tsv'), 'w') as output:
+    with open(join(SOM_DIR, 'eng_embedded_sentences.tsv'), 'w') as output:
         writer = csv.writer(output, delimiter='\t')
 
         # Keep only the sentences that have japanese translation
@@ -61,12 +54,10 @@ def preprocessing():
             for count, row in enumerate(reader):
                 print("\rWriting row ", count, end="")
                 eng_sent = eng_sents.pop(row[0], None)
-                jpn_sent = jpn_sents.get(row[1])
                 if eng_sent is not None:
                     eng_seq = pad_sequences(eng_tokenizer.texts_to_sequences([eng_sent]), maxlen=MAX_SEQUENCE_ENG)
-                    jpn_seq = pad_sequences(jpn_tokenizer.texts_to_sequences([jpn_sent]), maxlen=MAX_SEQUENCE_JPN)
-                    embedding = embedder([eng_seq, jpn_seq])
-                    row = [eng_sent, jpn_sent]
+                    embedding = embedder(eng_seq)
+                    row = [eng_sent]
                     row.extend(embedding[0])
                     writer.writerow(row)
     print("Done!")
@@ -75,17 +66,17 @@ def preprocessing():
 def build_som():
     sents = list()
     embeds = list()
-    with open(join(SOM_DIR, 'embedded_sentences.tsv'), 'r') as file:
+    with open(join(SOM_DIR, 'eng_embedded_sentences.tsv'), 'r') as file:
         tot = sum(1 for _ in file)
         file.seek(0)
         reader = csv.reader(file, delimiter='\t')
         for count, row in enumerate(reader):
             print("\rPreparing the dataset... %d%% " % np.floor((count / tot) * 100), end="")
-            sents.append((row[0], row[1]))
-            embeds.append(list(map(float, row[2:])))
-    with open(join(SOM_DIR, 'sentences.pickle'), 'wb') as handle:
+            sents.append(row[0])
+            embeds.append(list(map(float, row[1:])))
+    with open(join(SOM_DIR, 'eng_sentences.pickle'), 'wb') as handle:
         pickle.dump(sents, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    with open(join(SOM_DIR, 'embeddings.pickle'), 'wb') as handle:
+    with open(join(SOM_DIR, 'eng_embeddings.pickle'), 'wb') as handle:
         pickle.dump(embeds, handle, protocol=pickle.HIGHEST_PROTOCOL)
     print("Done.")
 
@@ -94,9 +85,9 @@ def build_som():
                          activation_distance='cosine')
     selforgmap.random_weights_init(embeds)
     selforgmap.train_batch(embeds, len(embeds), verbose=True)
-    with open(join(SOM_DIR, SOM), 'wb') as handle:
+    with open(join(SOM_DIR, 'eng_som.pickle'), 'wb') as handle:
         pickle.dump(selforgmap, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        print("SOM saved to " + join(MODELS_DIR, SOM))
+        print("SOM saved to " + join(SOM_DIR, 'eng_som.pickle'))
 
     winmap = [[list() for _ in range(dimension)] for _ in range(dimension)]
     tot = len(embeds)
@@ -105,9 +96,9 @@ def build_som():
         x_c, y_c = selforgmap.winner(vector)
         winmap[x_c][y_c].append(idx)
     print("Done.")
-    with open(join(SOM_DIR, WINMAP), 'wb') as handle:
+    with open(join(SOM_DIR, 'eng_winmap.pickle'), 'wb') as handle:
         pickle.dump(winmap, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        print("Winmap saved to " + join(MODELS_DIR, WINMAP))
+        print("Winmap saved to " + join(SOM_DIR, 'eng_winmap.pickle'))
 
 
 if __name__ == '__main__':
@@ -123,11 +114,8 @@ if __name__ == '__main__':
     for index in similar_idx:
         sem_similarity = cosine_similarity(np.array(test_emb).reshape(1, -1),
                                            np.array(embeddings[index]).reshape(1, -1))[0][0]
-        eng_pos_similarity = trigram_similarity(test_sent[0], sentences[index][0], 'eng')
-        jpn_pos_similarity = trigram_similarity(test_sent[1], sentences[index][1], 'jpn')
-        scores[sentences[index]] = (sem_similarity + eng_pos_similarity) - (sem_similarity * eng_pos_similarity)
-        scores[sentences[index]] = (scores[sentences[index]] + jpn_pos_similarity) - (
-                scores[sentences[index]] * jpn_pos_similarity)
+        pos_similarity = trigram_similarity(test_sent, sentences[index], 'eng')
+        scores[sentences[index]] = (sem_similarity + pos_similarity) - (sem_similarity * pos_similarity)
     scores = {k: v for count, (k, v) in enumerate(sorted(scores.items(), key=lambda item: item[1], reverse=True)) if
               count <= 10}
     for sent, score in scores.items():

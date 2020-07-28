@@ -79,12 +79,13 @@ class Pos2En(Enum):
     # Theese tags are only present in the japanese parser
     ADJV = "形状詞"  # Adjectival verb
     SUF = "接尾辞"  # Suffix
-    PRE = "接頭辞"  # Prefix
+    PRE = "接頭詞"  # Prefix
     TAIL = "語尾"  # Word tail (conjugation)
     URL = "URL"  # URL
     ENG = "英単語"  # English word
     FIL = "言いよどみ"  # Filler
     MSP = "web誤脱"  # Misspelling
+    FILLER = "フィラー"
 
 
 class JapaneseTokenizer:
@@ -105,7 +106,7 @@ class JapaneseTokenizer:
         return attributes
 
     def __setstate__(self, state):
-        self.__dict__ = state
+        self.__dict__ = state接頭詞
         self.mecab = MeCab.Tagger('')
 
     def tokenize(self, sent):
