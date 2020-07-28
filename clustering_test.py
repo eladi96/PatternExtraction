@@ -12,7 +12,6 @@ if __name__ == '__main__':
 
     # BASELINE
     som, wm, sentences, embeddings = baseline.load_data()
-    print("Model: baseline")
     for idx in indices:
 
         test_sent = sentences[idx]
@@ -26,6 +25,26 @@ if __name__ == '__main__':
                                                np.array(embeddings[index]).reshape(1, -1))[0][0]
             scores[sentences[index]] = sem_similarity
         scores = {k: v for k, v in sorted(scores.items(), key=lambda item: item[1], reverse=True)}
+        scores = {k: v for count, (k, v) in enumerate(sorted(scores.items(), key=lambda item: item[1], reverse=True)) if
+                  count <= 10}
+        print("Sentence: ", test_sent)
+        for sent, score in scores.items():
+            print(sent, score)
+
+    # ENG MODEL
+    som, wm, sentences, embeddings = eng.load_data()
+    for idx in indices:
+
+        test_sent = sentences[idx]
+        test_emb = embeddings[idx]
+        x, y = som.winner(test_emb)
+        similar_idx = wm[x][y]
+        scores = dict()
+        for index in similar_idx:
+            sem_similarity = cosine_similarity(np.array(test_emb).reshape(1, -1),
+                                               np.array(embeddings[index]).reshape(1, -1))[0][0]
+            pos_similarity = trigram_similarity(test_sent, sentences[index], 'eng')
+            scores[sentences[index]] = (sem_similarity + pos_similarity) - (sem_similarity * pos_similarity)
         scores = {k: v for count, (k, v) in enumerate(sorted(scores.items(), key=lambda item: item[1], reverse=True)) if
                   count <= 10}
         print("Sentence: ", test_sent)
