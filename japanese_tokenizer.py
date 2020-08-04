@@ -106,7 +106,7 @@ class JapaneseTokenizer:
         return attributes
 
     def __setstate__(self, state):
-        self.__dict__ = state接頭詞
+        self.__dict__ = state
         self.mecab = MeCab.Tagger('')
 
     def tokenize(self, sent):
