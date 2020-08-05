@@ -135,21 +135,3 @@ def read_sentences(filename):
         print("Read sentences.")
 
     return sentences
-
-
-if __name__ == '__main__':
-
-    # tagged_sentences('500_tagged_sentences.tsv')
-
-    tags = dict()
-    with open(os.path.join(TATOEBA_DIR, '500_tagged_sentences.tsv'), mode='r') as tsv:
-        reader = csv.reader(tsv, delimiter='\t')
-        for row in reader:
-            if tags.get(row[0], None) is not None:
-                tags[row[0]] += 1
-            else:
-                tags[row[0]] = 1
-
-    tags = {k: v for k, v in sorted(tags.items(), key=lambda item: item[1])}
-    for key, value in tags.items():
-        print(key, value)
