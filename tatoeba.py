@@ -45,7 +45,7 @@ def generate_dataset():
 
 def tagged_sentences(destination):
     """
-    Script used to generate a file containing 200 sentences per tag.
+    Script used to generate a file containing up to 500 sentences per tag.
     Every row of the output file will contain [tag, count, tatoebaId, sentence]
     :param destination: name of the destination file
     """
@@ -55,8 +55,11 @@ def tagged_sentences(destination):
 
     eng_sentences = read_sentences(ENG_SENT)
     jpn_sentences = read_sentences(JPN_SENT)
-    links = {row[0]: row[1] for row in
-             csv.reader(open(os.path.join(TATOEBA_DIR, ENG_JPN_LINKS), mode='r'), delimiter='\t')}
+    ita_sentences = read_sentences(ITA_SENT)
+    links_jpn = {row[0]: row[1] for row in
+                 csv.reader(open(os.path.join(TATOEBA_DIR, ENG_JPN_LINKS), mode='r'), delimiter='\t')}
+    links_ita = {row[0]: row[1] for row in
+                 csv.reader(open(os.path.join(TATOEBA_DIR, ENG_ITA_LINKS), mode='r'), delimiter='\t')}
 
     output = open(os.path.join(TATOEBA_DIR, destination), mode='w')
     for tag in tags_list:
@@ -66,11 +69,16 @@ def tagged_sentences(destination):
             gen = (row for row in reader if count <= 500)
             for row in gen:
                 eng_sent = eng_sentences.get(row[0], None)
-                jpn_id = links.get(row[0], None)
+
+                jpn_id = links_jpn.get(row[0], None)
                 jpn_sent = jpn_sentences.get(jpn_id, None)
-                if row[1] == tag and eng_sent is not None and jpn_sent is not None:
+
+                ita_id = links_ita.get(row[0], None)
+                ita_sent = ita_sentences.get(ita_id, None)
+
+                if row[1] == tag and eng_sent is not None and jpn_sent is not None and ita_sent is not None:
                     output.write(str(tag) + '\t' + row[0] + "\t" + eng_sentences.pop(row[0]) + "\t" + jpn_sentences.pop(
-                        jpn_id) + "\n")
+                        jpn_id) + "\t" + ita_sentences.pop(ita_id) + "\n")
                     count += 1
     output.close()
 
