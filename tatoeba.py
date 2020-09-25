@@ -1,5 +1,5 @@
 """
-The purpose of this module is to create a linked resource from the sentences contained in the .tsv
+The purpose of this module is to create a dataset from the sentences contained in the .tsv
 files downloaded from tatoeba.org, aligning the sentences from the three different languages.
 """
 import csv
@@ -18,12 +18,12 @@ def generate_dataset():
     valid = []
     test = []
 
-    with open(os.path.join(TATOEBA_DIR, BEST_TAGS), mode='r') as file:
+    with open(os.path.join(TATOEBA, BEST_TAGS), mode='r') as file:
         tags_list = [line.split(':')[0] for line in file]
         tags_list.reverse()
 
     for tag in tags_list:
-        with open(os.path.join(TATOEBA_DIR, TAGGED_SENT), mode='r') as tsv:
+        with open(os.path.join(TATOEBA, TAGGED_SENT), mode='r') as tsv:
             reader = csv.reader(tsv, delimiter='\t')
             samples = [line for line in reader if line[0] == tag]
             random.shuffle(samples)
@@ -43,13 +43,12 @@ def generate_dataset():
     return train, valid, test
 
 
-def tagged_sentences(destination):
+def tagged_sentences():
     """
-    Script used to generate a file containing up to 500 sentences per tag.
-    Every row of the output file will contain [tag, count, tatoebaId, sentence]
-    :param destination: name of the destination file
+    Script used to generate a file containing up to 500 sentences per tag in the three languages.
+    Every row of the output file will contain [tag, eng_id, eng_sentence, jpn_sentence, ita_sentence]
     """
-    with open(os.path.join(TATOEBA_DIR, BEST_TAGS), mode='r') as file:
+    with open(os.path.join(TATOEBA, BEST_TAGS), mode='r') as file:
         tags_list = [line.split(':')[0] for line in file]
         tags_list.reverse()
 
@@ -57,14 +56,14 @@ def tagged_sentences(destination):
     jpn_sentences = read_sentences(JPN_SENT)
     ita_sentences = read_sentences(ITA_SENT)
     links_jpn = {row[0]: row[1] for row in
-                 csv.reader(open(os.path.join(TATOEBA_DIR, ENG_JPN_LINKS), mode='r'), delimiter='\t')}
+                 csv.reader(open(os.path.join(TATOEBA, ENG_JPN_LINKS), mode='r'), delimiter='\t')}
     links_ita = {row[0]: row[1] for row in
-                 csv.reader(open(os.path.join(TATOEBA_DIR, ENG_ITA_LINKS), mode='r'), delimiter='\t')}
+                 csv.reader(open(os.path.join(TATOEBA, ENG_ITA_LINKS), mode='r'), delimiter='\t')}
 
-    output = open(os.path.join(TATOEBA_DIR, destination), mode='w')
+    output = open(os.path.join(TATOEBA, TAGGED_SENT), mode='w')
     for tag in tags_list:
         count = 1
-        with open(os.path.join(TATOEBA_DIR, ENG_TAGS)) as tsv:
+        with open(os.path.join(TATOEBA, ENG_TAGS)) as tsv:
             reader = csv.reader(tsv, delimiter='\t')
             gen = (row for row in reader if count <= 500)
             for row in gen:
@@ -91,9 +90,9 @@ def sentences_tags(sent_file):
 
     sentences = read_sentences(sent_file)
     filename = sent_file.replace('_sentences.tsv', '_tags.tsv')
-    output = open(os.path.join(TATOEBA_DIR, filename), mode='w', encoding='utf8')
+    output = open(os.path.join(TATOEBA, filename), mode='w', encoding='utf8')
 
-    with open(os.path.join(TATOEBA_DIR, TAGS), mode='r', encoding='utf8') as tsv_file:
+    with open(os.path.join(TATOEBA, TAGS), mode='r', encoding='utf8') as tsv_file:
         reader = csv.reader(tsv_file, delimiter='\t')
         for row in reader:
             if row[0] in sentences:
@@ -111,19 +110,19 @@ def coupled_links(lang1_file, lang2_file):
     lang2_sents = read_sentences(lang2_file)
 
     filename = lang1_file[0:3] + '_' + lang2_file[0:3] + '_links.tsv'
-    output = open(os.path.join(TATOEBA_DIR, filename), mode='w', encoding='utf8')
+    output = open(os.path.join(TATOEBA, filename), mode='w', encoding='utf8')
 
-    if not os.path.exists(os.path.join(TATOEBA_DIR, COUPLED_LINKS)):
+    if not os.path.exists(os.path.join(TATOEBA, COUPLED_LINKS)):
         print("Downloading links.tsv from tatoeba.org..", end="")
-        filename = wget.download(TATOEBA_LINKS_URL, TATOEBA_DIR)
+        filename = wget.download(TATOEBA_LINKS_URL, TATOEBA)
         print("\rExtracting archive...", end="")
         tar = tarfile.open(filename)
-        tar.extractall(TATOEBA_DIR)
+        tar.extractall(TATOEBA)
         tar.close()
         os.remove(filename)
         print("\rCompleted!")
 
-    with open(os.path.join(TATOEBA_DIR, COUPLED_LINKS), mode='r', encoding='utf8') as tsv_file:
+    with open(os.path.join(TATOEBA, COUPLED_LINKS), mode='r', encoding='utf8') as tsv_file:
         reader = csv.reader(tsv_file, delimiter='\t')
         for row in reader:
             if row[0] in lang1_sents and row[1] in lang2_sents:
@@ -133,11 +132,11 @@ def coupled_links(lang1_file, lang2_file):
 def read_sentences(filename):
     """
     Method for readings sentences from tatoeba files.
-    :param: path: the path to the tsv file containing the sentences
-    :return: dict of sentencese in the form {tatoebaId : sentence}
+    :param: filename: the name of the file containing the sentences
+    :return: dict of sentences in the form {tatoebaId : sentence}
     """
     # Reading sentences from files and adding them to the sentences dictionary
-    with open(os.path.join(TATOEBA_DIR, filename), mode='r', encoding='utf8') as tsv_file:
+    with open(os.path.join(TATOEBA, filename), mode='r', encoding='utf8') as tsv_file:
         reader = csv.reader(tsv_file, delimiter='\t')
         sentences = dict([(row[0], row[2]) for row in reader])
         print("Read sentences.")
