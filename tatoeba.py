@@ -19,7 +19,7 @@ def generate_dataset():
     test = []
 
     with open(os.path.join(TATOEBA, BEST_TAGS), mode='r') as file:
-        tags_list = [line.split('\t')[0] for line in file]
+        tags_list = [line.split(' ')[0] for line in file]
 
     for tag in tags_list:
         with open(os.path.join(TATOEBA, TAGGED_SENT), mode='r') as tsv:
