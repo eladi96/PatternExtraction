@@ -1,0 +1,71 @@
+\documentclass{article}%
+\usepackage[T1]{fontenc}%
+\usepackage[utf8]{inputenc}%
+\usepackage{lmodern}%
+\usepackage{textcomp}%
+\usepackage{lastpage}%
+%
+\title{Models comparison}%
+\author{Enrico Ladisa}%
+\date{\today}%
+%
+\begin{document}%
+\normalsize%
+\maketitle%
+\section{Baseline Model}%
+\label{sec:BaselineModel}%
+\begin{center}%
+\begin{tabular}[centered]{l||r r r r}%
+Set&Loss&Accuracy&Recall&Precision\\%
+\hline%
+\hline%
+Training&1.9247&0.5362&0.0973&0.8418\\%
+Validation&1.9917&0.5181&0.0875&0.8156\\%
+Testing&1.9794&0.5286&0.0856&0.8208\\%
+\end{tabular}%
+\end{center}
+
+%
+\section{English Recurrent Model}%
+\label{sec:EnglishRecurrentModel}%
+\begin{center}%
+\begin{tabular}[centered]{l||r r r r}%
+Set&Loss&Accuracy&Recall&Precision\\%
+\hline%
+\hline%
+Training&0.3049&0.9137&0.8735&0.9462\\%
+Validation&0.8356&0.7684&0.7258&0.8335\\%
+Testing&0.8384&0.7687&0.7235&0.8298\\%
+\end{tabular}%
+\end{center}
+
+%
+\section{Eng{-}Jpn Model}%
+\label{sec:Eng{-}JpnModel}%
+\begin{center}%
+\begin{tabular}[centered]{l||r r r r}%
+Set&Loss&Accuracy&Recall&Precision\\%
+\hline%
+\hline%
+Training&0.0995&0.9803&0.9676&0.9878\\%
+Validation&0.753&0.8081&0.7726&0.8561\\%
+Testing&0.7331&0.8168&0.7869&0.8606\\%
+\end{tabular}%
+\end{center}
+
+%
+\section{Eng{-}Ita Model}%
+\label{sec:Eng{-}ItaModel}%
+\begin{center}%
+\begin{tabular}[centered]{l||r r r r}%
+Set&Loss&Accuracy&Recall&Precision\\%
+\hline%
+\hline%
+Training&0.1272&0.9831&0.9584&0.992\\%
+Validation&0.869&0.7821&0.7293&0.839\\%
+Testing&0.8646&0.7843&0.7392&0.8423\\%
+\end{tabular}%
+\end{center}
+
+%
+\end{document}
