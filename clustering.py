@@ -21,10 +21,14 @@ def plot_data(data, mdl):
     width = 0.15
 
     plt.figure(figsize=(5, 5))
-    plt.bar(ics - width, data[0], width, label='SOM', color='red')
-    plt.bar(ics, data[1], width, label='GMM', color='green')
-    plt.bar(ics + width, data[2], width, label='K-Medoids', color='blue')
-    plt.title(mdl + ' model')
+    plt.bar(ics - width, data[0], width, label='SOM', color='#00b3a7')
+    plt.bar(ics, data[1], width, label='GMM', color='#e27a03')
+    plt.bar(ics + width, data[2], width, label='K-Medoids', color='#009900')
+    titles = {'baseline': 'Baseline',
+              'eng': 'English',
+              'eng_jpn': 'English - Japanese',
+              'eng_ita': 'English - Italian'}
+    plt.title(titles[mdl] + ' model')
     plt.xticks(ics, labels)
     plt.xlabel('Clusters')
     plt.ylim(top=1)
@@ -166,7 +170,7 @@ def adjusted_rand_index(clustering):
 if __name__ == '__main__':
 
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-    preprocessing()
+    # preprocessing()
     for model in [
         'baseline',
         'eng',
@@ -180,3 +184,8 @@ if __name__ == '__main__':
             gmm_data = [adjusted_rand_index(gmm_clustering(embeddings, i)) for i in [30, 60, 90]]
             kmed_data = [adjusted_rand_index(kmedoids_clustering(embeddings, i)) for i in [30, 60, 90]]
             plot_data((som_data, gmm_data, kmed_data), model)
+            with open(os.path.join(CLUSTERING, "results.txt"), 'a') as results:
+                results.write("Clustering with " + model + " model.\n")
+                results.write("SOM:" + str(som_data) + "\n")
+                results.write("KMED: " + str(kmed_data) + "\n")
+                results.write("GMM: " + str(gmm_data) + "\n\n\n")
